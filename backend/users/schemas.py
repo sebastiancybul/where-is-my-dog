@@ -4,7 +4,7 @@ from drf_spectacular.utils import (
     OpenApiExample,
 )
 
-from .serializers import UserSerializer, RegistrationSerializer
+from .serializers import UserSerializer, RegistrationSerializer, UpdateProfileSerializer, ChangePasswordSerializer, DeleteAccountSerializer
 
 _user_example = {
     'id': 1,
@@ -85,4 +85,60 @@ current_user_schema = extend_schema(
         200: UserSerializer,
         401: OpenApiResponse(description="Authentication credentials were not provided")
     },
+)
+
+update_profile_schema = extend_schema(
+    tags=['Settings'],
+    summary='Update profile',
+    description='Update username and/or phone number. All fields are optional.',
+    request=UpdateProfileSerializer,
+    responses={
+        200: UpdateProfileSerializer,
+        400: OpenApiResponse(description="Validation error"),
+        401: OpenApiResponse(description="Authentication required"),
+    },
+)
+
+change_password_schema = extend_schema(
+    tags=['Settings'],
+    summary='Change password',
+    request=ChangePasswordSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="Password changed successfully",
+            examples=[
+                OpenApiExample('Success', value={'detail': 'Password changed successfully.'})
+            ]
+        ),
+        400: OpenApiResponse(
+            description="Validation error",
+            examples=[
+                OpenApiExample('Wrong old password', value={'password': ['Old password is incorrect.']}),
+                OpenApiExample('Passwords mismatch', value={'new_password2': ['Passwords do not match']}),
+            ]
+        ),
+        401: OpenApiResponse(description="Authentication required"),
+    }
+)
+
+delete_account_schema = extend_schema(
+    tags=['Settings'],
+    summary='Delete account',
+    description='Permanently delete the authenticated user account. Requires password confirmation.',
+    request=DeleteAccountSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="Account deleted successfully",
+            examples=[
+                OpenApiExample('Success', value={'detail': 'Account deleted successfully.'})
+            ]
+        ),
+        400: OpenApiResponse(
+            description="Validation error",
+            examples=[
+                OpenApiExample('Wrong password', value={'password': ['Password is incorrect.']})
+            ]
+        ),
+        401: OpenApiResponse(description="Authentication required"),
+    }
 )

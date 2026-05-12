@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import (
 from drf_spectacular.utils import extend_schema
 
 from .views.auth import register, login, current_user
+from .views.settings import change_password, delete_account, update_profile
 
 TokenRefreshView = extend_schema(tags=['Authentication'])(TokenRefreshView)
 TokenVerifyView = extend_schema(tags=['Authentication'])(TokenVerifyView)
@@ -25,4 +26,9 @@ urlpatterns = [
         name='token_refresh'
     ),
     path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    
+    # Manage user account
+    path('settings/profile/', update_profile, name='settings-profile'),
+    path('settings/password/', change_password, name='settings-password'),
+    path('settings/account/delete/', delete_account, name='settings-account-delete'),
 ]

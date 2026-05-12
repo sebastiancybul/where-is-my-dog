@@ -106,3 +106,54 @@ class UserPublicSerializer(serializers.ModelSerializer):
         if obj.profile_photo:
             return obj.profile_photo
         return None
+
+
+class UpdateProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False)
+    phone = serializers.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'phone'
+        )
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("A user with that username already exists.")
+        return value
+
+    def validate_phone(self, value):
+        if User.objects.filter(phone=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This phone number is already in use.")
+        return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['new_password2']:
+            raise serializers.ValidationError({"new_password2": "Passwords do not match"})
+        
+        user = self.context['request'].user
+        if not user.check_password(data['password']):
+            raise serializers.ValidationError({"password": "Password is incorrect."})
+
+        return data
+    
+
+
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+    
+    def validate(self, data):
+        user = self.context['request'].user
+        if not user.check_password(data['password']):
+            raise serializers.ValidationError({"password": "Password is incorrect."})
+        return data
+
+
