@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, ActivityIndicator, Pressable, RefreshControl } from "react-native";
 import React, { useCallback, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import ListingCard, { ListingCardItem } from "@/components/ListingCard";
@@ -15,7 +15,6 @@ interface ProfileUser {
 interface ProfileScreenProps {
   user: ProfileUser;
   onLogout: () => void;
-  onSettings?: () => void;
 }
 
 const formatDateLabel = (dateStr: string): string => {
@@ -30,13 +29,14 @@ const formatDateLabel = (dateStr: string): string => {
 };
 
 
-const ProfileScreen = ({ user, onLogout, onSettings }: ProfileScreenProps) => {
+const ProfileScreen = ({ user, onLogout }: ProfileScreenProps) => {
   const [listings, setListings] = useState<ListingCardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'lost' | 'found' | 'history'>('lost');
   const [activeHistoryTab, setActiveHistoryTab] = useState<'came_home' | 'returned' | 'expired'>('came_home');
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
+  const router = useRouter();
 
   const activeLost = listings.filter(l => l.status === 'active' && l.type === 'lost');
   const activeFound = listings.filter(l => l.status === 'active' && l.type === 'found');
@@ -80,7 +80,7 @@ const ProfileScreen = ({ user, onLogout, onSettings }: ProfileScreenProps) => {
       <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
         <Text className="text-2xl font-black text-gray-900 tracking-tight">Profile</Text>
         <View className="flex-row gap-2">
-          <Pressable onPress={onSettings} className="p-2 bg-gray-100 rounded-full active:opacity-80">
+          <Pressable onPress={() => router.push('/settings')} className="p-2 bg-gray-100 rounded-full active:opacity-80">
             <Ionicons name="settings-outline" size={24} color="#1f2937" />
           </Pressable>
           <Pressable onPress={onLogout} className="p-2 bg-red-50 rounded-full active:opacity-80">

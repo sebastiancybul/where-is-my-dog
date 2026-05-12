@@ -1,6 +1,5 @@
 import { Stack } from "expo-router";
 import './global.css'
-import { StatusBar } from "react-native";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export default function RootLayout() {
@@ -17,6 +16,10 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="listing/[id]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="settings"
           options={{ headerShown: false }}
         />
       </Stack>

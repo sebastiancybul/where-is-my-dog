@@ -39,6 +39,7 @@ interface AuthContextType {
     onLogin: (credentials: LoginCredentials) => Promise<any>;
     onRegister: (credentials: RegisterCredentials) => Promise<any>;
     onLogout: () => Promise<void>;
+    onUpdateUser: (data: Partial<User>) => void;
 }
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -135,10 +136,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
     }
 
+    const updateUser = (data: Partial<User>) => {
+        setAuthState(prev => ({ ...prev, user: { ...prev.user!, ...data } }));
+    };
+
     const value = {
         onRegister: register,
         onLogin: login,
         onLogout: logout,
+        onUpdateUser: updateUser,
         authState
     };
 
