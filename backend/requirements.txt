@@ -23,3 +23,8 @@ flake8>=7.0
 # Celery + Redis (Async tasks)
 celery[redis]>=5.3
 redis>=5.0
+
+# WebSockets
+channels>=4.3.2
+channels-redis>=4.2
+daphne>=4.1

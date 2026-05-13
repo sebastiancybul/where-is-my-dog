@@ -29,6 +29,8 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,9 +46,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'cloudinary',
-
+    'channels',
+    
     'users',
     'listings',
+    'chats',
 ]
 
 MIDDLEWARE = [
@@ -171,6 +175,18 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+
+ASGI_APPLICATION = 'config.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [env('CELERY_BROKER_URL', default='redis://redis:6379/0')],
+        },
+    },
+}
 
 
 EMAIL_BACKEND = env(
