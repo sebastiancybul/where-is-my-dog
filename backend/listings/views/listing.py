@@ -36,6 +36,9 @@ from ..schemas import (
 from ..services import DuplicateDetector
 from listings.filters import ListingFilter
 
+from chats.models import Conversation, ConversationMembership
+from chats.serializers import ConversationSerializer
+
 
 @listing_viewset_schema
 class ListingViewSet(viewsets.ModelViewSet):
@@ -258,6 +261,16 @@ class ListingViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK
         )
+
+    @action(detail=True,
+            methods=['get'],
+            url_path='chat'
+    )
+    def chat(self, request, pk=None):
+        listing = self.get_object()
+        conversation = get_object_or_404(Conversation, listing=listing)
+        ConversationMembership.objects.get_or_create(user=request.user, conversation=conversation)
+        return Response(ConversationSerializer(conversation).data)
 
     @check_similar_schema
     @action(
