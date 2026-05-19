@@ -80,6 +80,19 @@ messages_schema = extend_schema(
     },
 )
 
+ws_ticket_schema = extend_schema(
+    tags=['Chats'],
+    summary='Generate WebSocket ticket',
+    description='Issues a single-use, 30-second ticket for authenticating a WebSocket connection. Pass the ticket as ?ticket=... in the WebSocket URL.',
+    request=None,
+    responses={
+        200: OpenApiResponse(
+            description='Ticket generated',
+            examples=[OpenApiExample('Ticket', value={'ticket': 'abc123...'})],
+        ),
+    },
+)
+
 upload_image_schema = extend_schema(
     tags=['Chats'],
     summary='Send image message',

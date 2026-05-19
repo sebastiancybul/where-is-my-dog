@@ -7,6 +7,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from chats.models import Conversation, ConversationMembership, Message, MessagePhoto
 from chats.permissions import IsConversationMember, IsListingOwner
@@ -18,7 +19,9 @@ from chats.schemas import (
     join_schema,
     messages_schema,
     upload_image_schema,
+    ws_ticket_schema,
 )
+from chats.tickets import generate_ticket
 
 User = get_user_model()
 
@@ -155,3 +158,12 @@ class ConversationViewSet(viewsets.GenericViewSet):
         )
 
         return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
+
+
+@ws_ticket_schema
+class WsTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        ticket = generate_ticket(request.user.pk)
+        return Response({"ticket": ticket})
