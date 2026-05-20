@@ -34,7 +34,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
+        try:
+            data = json.loads(text_data)
+        except json.JSONDecodeError:
+            await self.send(json.dumps({'type': 'error', 'code': 'invalid_json'}))
+            return
         msg_type = data.get('type')
 
         if msg_type == 'chat_message':
@@ -42,8 +46,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.send(json.dumps({'type': 'error', 'code': 'conversation_closed'}))
                 return
             body = data.get('body', '').strip()
-            if not body:
-                await self.send(json.dumps({'type': 'error', 'code': 'empty_message'}))
+            if not body or len(body) > 10_000:
+                await self.send(json.dumps({'type': 'error', 'code': 'invalid_message'}))
                 return
             message = await self.save_message(body)
             await self.channel_layer.group_send(self.room_group_name, {
@@ -107,5 +111,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def mark_message_read(self, message_id):
         MessageReadStatus.objects.get_or_create(
             message_id=message_id,
+            message__conversation=self.conversation,
             user=self.user,
         )
