@@ -37,9 +37,10 @@ The project is focused on **Poland**.
 - Owner/permission checks on all mutating endpoints
 - Email login with API tests
 - Settings endpoints (profile update, password change, account deletion) with tests
+- In-app chat (REST API + WebSocket consumer, ticket-based auth, read receipts)
 
 **In progress**
-- In-app chat
+- In-app chat (mobile UI)
 
 ---
 
@@ -69,9 +70,10 @@ The project is focused on **Poland**.
 
 ### API Documentation
 
-| API Docs 1 | API Docs 2 |
-|------------|------------|
-| ![API Docs 1](docs/screenshots/apidocs1.png) | ![API Docs 2](docs/screenshots/apidocs2.png) |
+![API Docs 1](docs/screenshots/apidocs1.png)
+![API Docs 2](docs/screenshots/apidocs2.png)
+
+WebSocket API is documented in [docs/asyncapi.yaml](docs/asyncapi.yaml) (AsyncAPI 3.1.0).
 
 ---
 
@@ -150,6 +152,8 @@ The project is focused on **Poland**.
 ## 3. Documentation
 
 Full documentation is available in the [docs/](docs/) folder.
+
+- [WebSocket API (AsyncAPI)](docs/asyncapi.yaml) — real-time chat over WSS
 
 ---
 

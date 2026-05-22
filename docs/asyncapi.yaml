@@ -1,0 +1,281 @@
+asyncapi: 3.1.0
+info:
+  title: Where Is My Dog – Chat WebSocket API
+  version: 1.0.0
+  description: >
+    Real-time chat API over secure WebSockets (WSS) for the Where Is My Dog
+    platform.
+
+
+    ## Authentication
+
+    Before opening a WebSocket connection the client must obtain a **single-use
+    ticket**
+
+    from `POST /api/ws-ticket/` (requires a valid session/JWT). The ticket has a
+    **30-second TTL**
+
+    and must be passed as the `ticket` query parameter when connecting.
+
+
+    ## Connection URL
+
+    ```
+
+    wss://{host}/ws/chats/{conversationId}/?ticket={ticket}
+
+    ```
+
+
+    ## Conversation closure
+
+    When a listing reaches a terminal status (FOUND / RETURNED / EXPIRED) the
+    conversation
+
+    is closed automatically. After that, sending `chat_message` returns an
+    `error` with
+
+    code `conversation_closed`.
+channels:
+  chat:
+    address: '/ws/chats/{conversationId}/'
+    description: >
+      Bidirectional channel for real-time messaging within a single
+      conversation.
+
+      Only authenticated members of the conversation may connect.
+    parameters:
+      conversationId:
+        description: Numeric ID of the conversation to join
+    bindings:
+      ws:
+        query:
+          type: object
+          required:
+            - ticket
+          properties:
+            ticket:
+              type: string
+              description: >-
+                Single-use authentication ticket (30 s TTL) from POST
+                /api/ws-ticket/
+    messages:
+      sendChatMessage:
+        $ref: '#/components/messages/SendChatMessage'
+      markRead:
+        $ref: '#/components/messages/MarkRead'
+      receiveChatMessage:
+        $ref: '#/components/messages/ReceiveChatMessage'
+      receiveMessageRead:
+        $ref: '#/components/messages/MessageRead'
+      receiveError:
+        $ref: '#/components/messages/Error'
+operations:
+  sendChatMessage:
+    action: send
+    channel:
+      $ref: '#/channels/chat'
+    summary: Send a text message
+    description: |
+      Client sends a text message to the conversation.
+      The message is broadcast to all connected participants.
+    messages:
+      - $ref: '#/channels/chat/messages/sendChatMessage'
+  markRead:
+    action: send
+    channel:
+      $ref: '#/channels/chat'
+    summary: Mark a message as read
+    description: |
+      Client marks a specific message as read.
+      The server broadcasts a `message_read` receipt to all participants.
+    messages:
+      - $ref: '#/channels/chat/messages/markRead'
+  receiveChatMessage:
+    action: receive
+    channel:
+      $ref: '#/channels/chat'
+    summary: Receive a new chat message
+    description: |
+      Server broadcasts this event to all connected members of the conversation
+      whenever a new message is sent (text or image upload).
+    messages:
+      - $ref: '#/channels/chat/messages/receiveChatMessage'
+  receiveMessageRead:
+    action: receive
+    channel:
+      $ref: '#/channels/chat'
+    summary: Receive a read receipt
+    description: |
+      Server broadcasts this event to all connected members when any participant
+      marks a message as read.
+    messages:
+      - $ref: '#/channels/chat/messages/receiveMessageRead'
+  receiveError:
+    action: receive
+    channel:
+      $ref: '#/channels/chat'
+    summary: Receive an error
+    description: |
+      Server sends an error frame directly to the client whose action failed.
+      Other participants do NOT receive this event.
+    messages:
+      - $ref: '#/channels/chat/messages/receiveError'
+components:
+  messages:
+    SendChatMessage:
+      name: SendChatMessage
+      title: Send Chat Message
+      summary: Client sends a text message to the conversation
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SendChatMessagePayload'
+    MarkRead:
+      name: MarkRead
+      title: Mark Message as Read
+      summary: Client marks a specific message as read
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MarkReadPayload'
+    ReceiveChatMessage:
+      name: ReceiveChatMessage
+      title: Chat Message Broadcast
+      summary: Server broadcasts a new message to all conversation participants
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ReceiveChatMessagePayload'
+    MessageRead:
+      name: MessageRead
+      title: Read Receipt Broadcast
+      summary: Server broadcasts a read receipt to all conversation participants
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessageReadPayload'
+    Error:
+      name: Error
+      title: Error
+      summary: Server sends an error response to the originating client
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ErrorPayload'
+  schemas:
+    SendChatMessagePayload:
+      type: object
+      required:
+        - type
+        - body
+      properties:
+        type:
+          type: string
+          const: chat_message
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: Text content of the message
+      example:
+        type: chat_message
+        body: Czy ktoś widział mojego psa w okolicach Wilanowa?
+    MarkReadPayload:
+      type: object
+      required:
+        - type
+        - message_id
+      properties:
+        type:
+          type: string
+          const: mark_read
+        message_id:
+          type: integer
+          minimum: 1
+          description: ID of the message to mark as read
+      example:
+        type: mark_read
+        message_id: 42
+    ReceiveChatMessagePayload:
+      type: object
+      required:
+        - type
+        - message_id
+        - body
+        - sender_id
+        - sender_username
+        - created_at
+      properties:
+        type:
+          type: string
+          const: chat_message
+        message_id:
+          type: integer
+          description: Unique identifier of the message
+        body:
+          type: string
+          description: Text content (empty string for image-only messages)
+        sender_id:
+          type: integer
+          description: User ID of the sender
+        sender_username:
+          type: string
+          description: Username of the sender
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp of message creation
+      example:
+        type: chat_message
+        message_id: 42
+        body: Czy ktoś widział mojego psa w okolicach Wilanowa?
+        sender_id: 7
+        sender_username: jan_kowalski
+        created_at: '2026-05-22T14:30:00.000Z'
+    MessageReadPayload:
+      type: object
+      required:
+        - type
+        - message_id
+        - user_id
+        - username
+      properties:
+        type:
+          type: string
+          const: message_read
+        message_id:
+          type: integer
+          description: ID of the message that was read
+        user_id:
+          type: integer
+          description: User ID of the reader
+        username:
+          type: string
+          description: Username of the reader
+      example:
+        type: message_read
+        message_id: 42
+        user_id: 12
+        username: anna_nowak
+    ErrorPayload:
+      type: object
+      required:
+        - type
+        - code
+      properties:
+        type:
+          type: string
+          const: error
+        code:
+          type: string
+          enum:
+            - invalid_json
+            - invalid_message
+            - conversation_closed
+          description: >
+            - `invalid_json` – client sent malformed JSON
+
+            - `invalid_message` – missing or invalid fields (e.g. body too long,
+            missing message_id)
+
+            - `conversation_closed` – attempted to send a message to a closed
+            conversation
+      example:
+        type: error
+        code: conversation_closed
