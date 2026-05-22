@@ -61,14 +61,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         elif msg_type == 'mark_read':
             message_id = data.get('message_id')
-            if message_id:
-                await self.mark_message_read(message_id)
-                await self.channel_layer.group_send(self.room_group_name, {
-                    'type': 'message_read',
-                    'message_id': message_id,
-                    'user_id': self.user.pk,
-                    'username': self.user.username,
-                })
+            if not isinstance(message_id, int) or message_id <= 0:
+                await self.send(json.dumps({'type': 'error', 'code': 'invalid_message'}))
+                return
+            if not await self.mark_message_read(message_id):
+                await self.send(json.dumps({'type': 'error', 'code': 'invalid_message'}))
+                return
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'message_read',
+                'message_id': message_id,
+                'user_id': self.user.pk,
+                'username': self.user.username,
+            })
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -109,8 +113,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def mark_message_read(self, message_id):
-        MessageReadStatus.objects.get_or_create(
-            message_id=message_id,
-            message__conversation=self.conversation,
-            user=self.user,
-        )
+        try:
+            message = Message.objects.get(pk=message_id, conversation=self.conversation)
+        except Message.DoesNotExist:
+            return False
+        MessageReadStatus.objects.get_or_create(message=message, user=self.user)
+        return True

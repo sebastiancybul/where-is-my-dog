@@ -5,7 +5,7 @@ from channels.testing import WebsocketCommunicator
 from django.contrib.auth import get_user_model
 from django.test import TransactionTestCase, override_settings
 
-from chats.models import Conversation, ConversationMembership
+from chats.models import Conversation, ConversationMembership, Message
 from config.asgi import application
 
 User = get_user_model()
@@ -123,6 +123,59 @@ class ChatConsumerMessagingTests(TransactionTestCase):
 
                 self.assertEqual(response["type"], "error")
                 self.assertEqual(response["code"], "conversation_closed")
+                await communicator.disconnect()
+        async_to_sync(run)()
+
+    def test_mark_read_missing_message_id_returns_error(self):
+        async def run():
+            with patch("chats.middleware.consume_ticket", return_value=self.user.pk):
+                communicator = WebsocketCommunicator(application, ws_url(self.conversation.pk))
+                connected, _ = await communicator.connect()
+                self.assertTrue(connected)
+
+                await communicator.send_json_to({"type": "mark_read"})
+                response = await communicator.receive_json_from()
+
+                self.assertEqual(response["type"], "error")
+                self.assertEqual(response["code"], "invalid_message")
+                await communicator.disconnect()
+        async_to_sync(run)()
+
+    def test_mark_read_nonexistent_message_returns_error(self):
+        async def run():
+            with patch("chats.middleware.consume_ticket", return_value=self.user.pk):
+                communicator = WebsocketCommunicator(application, ws_url(self.conversation.pk))
+                connected, _ = await communicator.connect()
+                self.assertTrue(connected)
+
+                await communicator.send_json_to({"type": "mark_read", "message_id": 999999})
+                response = await communicator.receive_json_from()
+
+                self.assertEqual(response["type"], "error")
+                self.assertEqual(response["code"], "invalid_message")
+                await communicator.disconnect()
+        async_to_sync(run)()
+
+    def test_mark_read_valid_message_emits_event(self):
+        message = Message.objects.create(
+            conversation=self.conversation,
+            sender=self.user,
+            body="Hello",
+        )
+
+        async def run():
+            with patch("chats.middleware.consume_ticket", return_value=self.user.pk):
+                communicator = WebsocketCommunicator(application, ws_url(self.conversation.pk))
+                connected, _ = await communicator.connect()
+                self.assertTrue(connected)
+
+                await communicator.send_json_to({"type": "mark_read", "message_id": message.pk})
+                response = await communicator.receive_json_from()
+
+                self.assertEqual(response["type"], "message_read")
+                self.assertEqual(response["message_id"], message.pk)
+                self.assertEqual(response["user_id"], self.user.pk)
+                self.assertEqual(response["username"], self.user.username)
                 await communicator.disconnect()
         async_to_sync(run)()
 
