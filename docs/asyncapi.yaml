@@ -70,6 +70,29 @@ channels:
         $ref: '#/components/messages/MessageRead'
       receiveError:
         $ref: '#/components/messages/Error'
+  notifications:
+    address: '/ws/notifications/'
+    description: >
+      Per-user channel for real-time notifications.
+
+      The server pushes events whenever something relevant happens for the
+      authenticated user (e.g. a new message arrives in one of their
+      conversations). Clients never send messages on this channel.
+    bindings:
+      ws:
+        query:
+          type: object
+          required:
+            - ticket
+          properties:
+            ticket:
+              type: string
+              description: >-
+                Single-use authentication ticket (30 s TTL) from POST
+                /api/ws-ticket/
+    messages:
+      receiveNotification:
+        $ref: '#/components/messages/Notification'
 operations:
   sendChatMessage:
     action: send
@@ -121,6 +144,17 @@ operations:
       Other participants do NOT receive this event.
     messages:
       - $ref: '#/channels/chat/messages/receiveError'
+  receiveNotification:
+    action: receive
+    channel:
+      $ref: '#/channels/notifications'
+    summary: Receive a user notification
+    description: |
+      Server pushes a notification to the authenticated user.
+      Currently the only event type is `new_message`, sent when another member
+      of one of the user's conversations sends a message.
+    messages:
+      - $ref: '#/channels/notifications/messages/receiveNotification'
 components:
   messages:
     SendChatMessage:
@@ -158,6 +192,13 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/ErrorPayload'
+    Notification:
+      name: Notification
+      title: User Notification
+      summary: Server pushes a real-time notification to the authenticated user
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/NotificationPayload'
   schemas:
     SendChatMessagePayload:
       type: object
@@ -279,3 +320,64 @@ components:
       example:
         type: error
         code: conversation_closed
+    NotificationPayload:
+      type: object
+      required:
+        - type
+        - event_type
+        - payload
+      properties:
+        type:
+          type: string
+          const: new_notification
+        event_type:
+          type: string
+          enum:
+            - new_message
+          description: >
+            Type of the notification event.
+
+            - `new_message` – a new message was sent in one of the user's
+            conversations
+        payload:
+          type: object
+          description: Event-specific data. Shape depends on `event_type`.
+          oneOf:
+            - $ref: '#/components/schemas/NewMessageNotificationPayload'
+    NewMessageNotificationPayload:
+      type: object
+      required:
+        - conversation_id
+        - last_message
+      properties:
+        conversation_id:
+          type: integer
+          description: ID of the conversation in which the message was sent
+        last_message:
+          type: object
+          required:
+            - id
+            - body
+            - sender_id
+            - created_at
+          properties:
+            id:
+              type: integer
+              description: ID of the new message
+            body:
+              type: string
+              description: Text content of the message
+            sender_id:
+              type: integer
+              description: User ID of the sender
+            created_at:
+              type: string
+              format: date-time
+              description: ISO 8601 UTC timestamp of message creation
+      example:
+        conversation_id: 5
+        last_message:
+          id: 42
+          body: Has anyone seen my dog near the park?
+          sender_id: 7
+          created_at: '2026-05-22T14:30:00.000Z'
