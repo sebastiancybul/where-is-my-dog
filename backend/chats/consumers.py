@@ -4,7 +4,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 
-from chats.notifications import notify_user
+from notifications.notify import notify_user
 
 from .models import (
     Conversation, ConversationMembership, Message, MessageReadStatus
