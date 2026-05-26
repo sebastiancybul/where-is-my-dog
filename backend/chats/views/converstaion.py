@@ -2,6 +2,7 @@ import cloudinary.uploader
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
+from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -46,7 +47,9 @@ class ConversationViewSet(viewsets.GenericViewSet):
         return [IsAuthenticated()]
 
     def list(self, request):
-        qs = self.get_queryset().order_by('-messages__created_at').distinct()
+        qs = self.get_queryset().annotate(
+            last_msg_at=Max('messages__created_at')
+        ).order_by('-last_msg_at')
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
@@ -57,8 +60,12 @@ class ConversationViewSet(viewsets.GenericViewSet):
 
     def create(self, request):
         other_user_id = request.data.get('user_id')
+        listing_id = request.data.get('listing_id')
+
         if not other_user_id:
             return Response({'user_id': 'This field is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not listing_id:
+            return Response({'listing_id': 'This field is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         other_user = get_object_or_404(User, pk=other_user_id)
         if other_user == request.user:
@@ -66,6 +73,7 @@ class ConversationViewSet(viewsets.GenericViewSet):
 
         existing = Conversation.objects.filter(
             type=Conversation.TYPE_PRIVATE,
+            listing_id=listing_id,
             memberships__user=request.user,
         ).filter(
             memberships__user=other_user,
@@ -74,7 +82,10 @@ class ConversationViewSet(viewsets.GenericViewSet):
         if existing:
             return Response(self.get_serializer(existing).data, status=status.HTTP_200_OK)
 
-        conversation = Conversation.objects.create(type=Conversation.TYPE_PRIVATE)
+        conversation = Conversation.objects.create(
+            type=Conversation.TYPE_PRIVATE,
+            listing_id=listing_id,
+        )
         ConversationMembership.objects.create(user=request.user, conversation=conversation)
         ConversationMembership.objects.create(user=other_user, conversation=conversation)
 
@@ -114,7 +125,7 @@ class ConversationViewSet(viewsets.GenericViewSet):
     def messages(self, request, pk=None):
         conversation = get_object_or_404(self.get_queryset(), pk=pk)
         self.check_object_permissions(request, conversation)
-        qs = conversation.messages.order_by('-created_at').prefetch_related('photos')
+        qs = conversation.messages.order_by('-created_at').prefetch_related('photos', 'read_statuses')
         page = self.paginate_queryset(qs)
         if page is not None:
             return self.get_paginated_response(MessageSerializer(page, many=True).data)

@@ -13,15 +13,24 @@ class Conversation(models.Model):
     ]
 
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    listing = models.OneToOneField(
+    listing = models.ForeignKey(
         'listings.Listing',
         on_delete=models.CASCADE,
-        related_name='public_conversation',
+        related_name='conversations',
         null=True,
         blank=True,
     )
     is_closed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['listing'],
+                condition=models.Q(type='public'),
+                name='unique_public_conversation_per_listing',
+            )
+        ]
 
 
 class ConversationMembership(models.Model):

@@ -27,7 +27,7 @@ conversation_viewset_schema = extend_schema_view(
         tags=['Chats'],
         summary='Create private 1:1 conversation',
         description='Creates a new private conversation with another user. Returns existing conversation if one already exists.',
-        request={'application/json': {'type': 'object', 'properties': {'user_id': {'type': 'integer'}}, 'required': ['user_id']}},
+        request={'application/json': {'type': 'object', 'properties': {'user_id': {'type': 'integer'}, 'listing_id': {'type': 'integer'}}, 'required': ['user_id', 'listing_id']}},
         responses={
             200: ConversationSerializer,
             201: ConversationSerializer,
