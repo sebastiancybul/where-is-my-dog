@@ -38,6 +38,21 @@ const TabsLayout = () => {
           }}
         />
         <Tabs.Screen
+          name="chats"
+          options={{
+            title: 'Chats',
+            headerShown: false,
+            href: authState.isAuthenticated ? undefined : null,
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
+                size={size}
+                color={color}
+              />
+            )
+          }}
+        />
+        <Tabs.Screen
           name="profile"
           options={{
             title: 'Profile',

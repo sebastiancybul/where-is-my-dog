@@ -17,6 +17,7 @@ const Details = () => {
   const [markResolvedError, setMarkResolvedError] = useState<string>('');
   const [isMarkingAsResolved, setIsMarkingAsResolved] = useState<boolean>(false);
   const [markResolvedSuccess, setMarkResolvedSuccess] = useState<boolean>(false);
+  const [isStartingChat, setIsStartingChat] = useState(false)
 
 	const { authState } = useAuth();
   const { listing: listingData, refetch } = useListing()
@@ -84,6 +85,22 @@ const Details = () => {
         },
       ]
     )
+  }
+
+  const handleMessage = async () => {
+    if (!authState.user || !listingData) return
+    try {
+      setIsStartingChat(true)
+      const res = await axios.post(`${API_URL}/api/chats/conversations/`, {
+        user_id: listingData.user.id,
+        listing_id: id,
+      })
+      router.push(`/chat/${res.data.id}`)
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setIsStartingChat(false)
+    }
   }
 
 	useEffect(() => {
@@ -273,15 +290,22 @@ const Details = () => {
 				</View>
 			</ScrollView>
 
-			{!isAuthor && (<Pressable className="absolute bottom-7 left-6 right-6 flex-row p-4 rounded-3xl items-center justify-center bg-slate-800">
-				<Ionicons
-					name="chatbubbles"
-					color="white"
-					size={24}
-				/>
-				<Text className="text-white text-2xl font-bold ml-2">Message</Text>
-			</Pressable>
-			)}
+			{!isAuthor && (
+        <Pressable
+          onPress={handleMessage}
+          disabled={isStartingChat}
+          className="absolute bottom-7 left-6 right-6 flex-row p-4 rounded-3xl items-center justify-center bg-slate-800 active:opacity-80"
+        >
+          {isStartingChat ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <>
+              <Ionicons name="chatbubbles" color="white" size={24} />
+              <Text className="text-white text-2xl font-bold ml-2">Message</Text>
+            </>
+          )}
+        </Pressable>
+      )}
 
       {isAuthor && (
 				<View className="absolute bottom-10 left-6 right-6 flex justify-between gap-3">

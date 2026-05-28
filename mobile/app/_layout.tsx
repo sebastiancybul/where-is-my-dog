@@ -22,6 +22,10 @@ export default function RootLayout() {
           name="settings"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="chat/[id]"
+          options={{ headerShown: false }}
+        />
       </Stack>
     </AuthProvider>
   )
