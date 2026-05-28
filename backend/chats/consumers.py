@@ -35,7 +35,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         await self.accept()
 
-    async def disconnect(self, close_code):
+        marked_count = await self.mark_all_messages_read()
+        if marked_count > 0:
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'all_messages_read',
+                'user_id': self.user.pk,
+                'username': self.user.username,
+            })
+
+    async def disconnect(self, _close_code):
         if hasattr(self, 'room_group_name'):
             await self.channel_layer.group_discard(
                 self.room_group_name, self.channel_name
@@ -127,6 +135,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'username': event['username'],
         }))
 
+    async def all_messages_read(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'all_messages_read',
+            'user_id': event['user_id'],
+            'username': event['username'],
+        }))
+
     @database_sync_to_async
     def get_conversation_or_none(self, conversation_id):
         try:
@@ -164,3 +179,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return list(ConversationMembership.objects.filter(
             conversation_id=conversation_id
         ))
+
+    @database_sync_to_async
+    def mark_all_messages_read(self):
+        already_read_ids = MessageReadStatus.objects.filter(
+            user_id=self.user.pk,
+            message__conversation_id=self.conversation.pk,
+        ).values_list('message_id', flat=True)
+
+        unread = list(
+            Message.objects.filter(
+                conversation_id=self.conversation.pk,
+            ).exclude(
+                sender_id=self.user.pk,
+            ).exclude(
+                id__in=already_read_ids,
+            )
+        )
+        if not unread:
+            return 0
+        MessageReadStatus.objects.bulk_create(
+            [MessageReadStatus(message_id=msg.pk, user_id=self.user.pk) for msg in unread],
+            ignore_conflicts=True,
+        )
+        return len(unread)

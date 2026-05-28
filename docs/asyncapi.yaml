@@ -27,6 +27,14 @@ info:
     ```
 
 
+    ## Auto-read on connect
+
+    Upon a successful connection the server automatically marks all unread messages
+    in the conversation as read for the connecting user and broadcasts an
+    `all_messages_read` event to all participants (only if there were any unread
+    messages).
+
+
     ## Conversation closure
 
     When a listing reaches a terminal status (FOUND / RETURNED / EXPIRED) the
@@ -68,6 +76,8 @@ channels:
         $ref: '#/components/messages/ReceiveChatMessage'
       receiveMessageRead:
         $ref: '#/components/messages/MessageRead'
+      receiveAllMessagesRead:
+        $ref: '#/components/messages/AllMessagesRead'
       receiveError:
         $ref: '#/components/messages/Error'
   notifications:
@@ -134,6 +144,18 @@ operations:
       marks a message as read.
     messages:
       - $ref: '#/channels/chat/messages/receiveMessageRead'
+  receiveAllMessagesRead:
+    action: receive
+    channel:
+      $ref: '#/channels/chat'
+    summary: Receive an all-messages-read broadcast
+    description: |
+      Server broadcasts this event to all connected members immediately after a
+      participant connects, if that participant had any unread messages. Clients
+      should mark all messages sent by the connecting user as read in their local
+      state.
+    messages:
+      - $ref: '#/channels/chat/messages/receiveAllMessagesRead'
   receiveError:
     action: receive
     channel:
@@ -185,6 +207,13 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/MessageReadPayload'
+    AllMessagesRead:
+      name: AllMessagesRead
+      title: All Messages Read Broadcast
+      summary: Server broadcasts that a user has read all messages on connect
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AllMessagesReadPayload'
     Error:
       name: Error
       title: Error
@@ -292,6 +321,26 @@ components:
       example:
         type: message_read
         message_id: 42
+        user_id: 12
+        username: anna_nowak
+    AllMessagesReadPayload:
+      type: object
+      required:
+        - type
+        - user_id
+        - username
+      properties:
+        type:
+          type: string
+          const: all_messages_read
+        user_id:
+          type: integer
+          description: User ID of the participant who connected and read all messages
+        username:
+          type: string
+          description: Username of that participant
+      example:
+        type: all_messages_read
         user_id: 12
         username: anna_nowak
     ErrorPayload:
