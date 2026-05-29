@@ -172,9 +172,14 @@ operations:
       $ref: '#/channels/notifications'
     summary: Receive a user notification
     description: |
-      Server pushes a notification to the authenticated user.
-      Currently the only event type is `new_message`, sent when another member
-      of one of the user's conversations sends a message.
+      Server pushes a notification to the authenticated user. The concrete
+      event is carried in `event_type`:
+
+      - `new_message` – another member of one of the user's conversations sent
+        a message
+      - `message_read` – a recipient read one of the user's messages
+      - `all_messages_read` – a recipient connected to a conversation and read
+        all of the user's previously unread messages in it
     messages:
       - $ref: '#/channels/notifications/messages/receiveNotification'
 components:
@@ -383,16 +388,25 @@ components:
           type: string
           enum:
             - new_message
+            - message_read
+            - all_messages_read
           description: >
             Type of the notification event.
 
             - `new_message` – a new message was sent in one of the user's
             conversations
+
+            - `message_read` – a recipient read one of the user's messages
+
+            - `all_messages_read` – a recipient connected to a conversation and
+            read all of the user's previously unread messages in it
         payload:
           type: object
           description: Event-specific data. Shape depends on `event_type`.
           oneOf:
             - $ref: '#/components/schemas/NewMessageNotificationPayload'
+            - $ref: '#/components/schemas/MessageReadNotificationPayload'
+            - $ref: '#/components/schemas/AllMessagesReadNotificationPayload'
     NewMessageNotificationPayload:
       type: object
       required:
@@ -430,3 +444,38 @@ components:
           body: Has anyone seen my dog near the park?
           sender_id: 7
           created_at: '2026-05-22T14:30:00.000Z'
+    MessageReadNotificationPayload:
+      type: object
+      required:
+        - conversation_id
+        - message_id
+        - read_by_user_id
+      properties:
+        conversation_id:
+          type: integer
+          description: ID of the conversation containing the message
+        message_id:
+          type: integer
+          description: ID of the message that was read
+        read_by_user_id:
+          type: integer
+          description: User ID of the recipient who read the message
+      example:
+        conversation_id: 5
+        message_id: 42
+        read_by_user_id: 12
+    AllMessagesReadNotificationPayload:
+      type: object
+      required:
+        - conversation_id
+        - read_by_user_id
+      properties:
+        conversation_id:
+          type: integer
+          description: ID of the conversation in which the messages were read
+        read_by_user_id:
+          type: integer
+          description: User ID of the recipient who read all the messages
+      example:
+        conversation_id: 5
+        read_by_user_id: 12

@@ -181,6 +181,63 @@ class ChatConsumerMessagingTests(TransactionTestCase):
 
 
 @override_settings(CHANNEL_LAYERS=CHANNEL_LAYERS_OVERRIDE)
+class ReadReceiptNotificationTests(TransactionTestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(
+            username="user1", email="user1@example.com", password="pass123"
+        )
+        self.user2 = User.objects.create_user(
+            username="user2", email="user2@example.com", password="pass123"
+        )
+        self.conversation = Conversation.objects.create(
+            type=Conversation.TYPE_PRIVATE
+        )
+        ConversationMembership.objects.create(
+            user=self.user1, conversation=self.conversation
+        )
+        ConversationMembership.objects.create(
+            user=self.user2, conversation=self.conversation
+        )
+        self.message = Message.objects.create(
+            conversation=self.conversation, sender=self.user1, body="Hi"
+        )
+
+    def test_user2_connecting_notifies_sender_all_messages_read(self):
+        def fake_consume(ticket):
+            return {"t1": self.user1.pk, "t2": self.user2.pk}.get(ticket)
+
+        async def run():
+            with patch(
+                "chats.middleware.consume_ticket", side_effect=fake_consume
+            ):
+                notif = WebsocketCommunicator(
+                    application, "/ws/notifications/?ticket=t1"
+                )
+                connected, _ = await notif.connect()
+                self.assertTrue(connected)
+
+                chat = WebsocketCommunicator(
+                    application, ws_url(self.conversation.pk, "t2")
+                )
+                connected2, _ = await chat.connect()
+                self.assertTrue(connected2)
+
+                event = await notif.receive_json_from()
+                self.assertEqual(event["type"], "new_notification")
+                self.assertEqual(event["event_type"], "all_messages_read")
+                self.assertEqual(
+                    event["payload"]["conversation_id"], self.conversation.pk
+                )
+                self.assertEqual(
+                    event["payload"]["read_by_user_id"], self.user2.pk
+                )
+
+                await chat.disconnect()
+                await notif.disconnect()
+        async_to_sync(run)()
+
+
+@override_settings(CHANNEL_LAYERS=CHANNEL_LAYERS_OVERRIDE)
 class ChatConsumerEdgeCaseTests(TransactionTestCase):
     def setUp(self):
         self.user = User.objects.create_user(

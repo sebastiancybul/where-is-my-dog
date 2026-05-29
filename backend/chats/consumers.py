@@ -35,13 +35,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         await self.accept()
 
-        marked_count = await self.mark_all_messages_read()
-        if marked_count > 0:
+        sender_ids = await self.mark_all_messages_read()
+        if sender_ids:
             await self.channel_layer.group_send(self.room_group_name, {
                 'type': 'all_messages_read',
                 'user_id': self.user.pk,
                 'username': self.user.username,
             })
+            for sender_id in sender_ids:
+                await notify_user(sender_id, 'all_messages_read', {
+                    'conversation_id': self.conversation.pk,
+                    'read_by_user_id': self.user.pk,
+                })
 
     async def disconnect(self, _close_code):
         if hasattr(self, 'room_group_name'):
@@ -105,7 +110,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     json.dumps({'type': 'error', 'code': 'invalid_message'})
                 )
                 return
-            if not await self.mark_message_read(message_id):
+            message = await self.mark_message_read(message_id)
+            if not message:
                 await self.send(
                     json.dumps({'type': 'error', 'code': 'invalid_message'})
                 )
@@ -116,6 +122,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'user_id': self.user.pk,
                 'username': self.user.username,
             })
+            if message.sender_id != self.user.pk:
+                await notify_user(message.sender_id, 'message_read', {
+                    'conversation_id': self.conversation.pk,
+                    'message_id': message_id,
+                    'read_by_user_id': self.user.pk,
+                })
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -168,11 +180,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 pk=message_id, conversation=self.conversation
             )
         except Message.DoesNotExist:
-            return False
+            return None
         MessageReadStatus.objects.get_or_create(
             message=message, user=self.user
         )
-        return True
+        return message
 
     @database_sync_to_async
     def get_conversation_members(self, conversation_id):
@@ -197,9 +209,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
         )
         if not unread:
-            return 0
+            return set()
         MessageReadStatus.objects.bulk_create(
-            [MessageReadStatus(message_id=msg.pk, user_id=self.user.pk) for msg in unread],
+            [
+                MessageReadStatus(message_id=msg.pk, user_id=self.user.pk)
+                for msg in unread
+            ],
             ignore_conflicts=True,
         )
-        return len(unread)
+        return {msg.sender_id for msg in unread}
