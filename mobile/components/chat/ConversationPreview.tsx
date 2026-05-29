@@ -39,7 +39,7 @@ const ConversationPreview = ({ conversation, currentUserId, onPress }: Props) =>
             <Text className="text-indigo-400">{conversation.listing_title}</Text>
           )}
         </Text>
-        <View className="flex-row justify-between items-center">
+        <View className="flex-row justify-between">
           <Text className={`text-lg ${isUnread ? 'font-bold' : 'font-normal'} text-slate-800`}>
             {other?.username ?? 'Unknown'}
           </Text>
@@ -49,21 +49,23 @@ const ConversationPreview = ({ conversation, currentUserId, onPress }: Props) =>
             </Text>
           )}
         </View>
-        <Text className={`text-base ${isUnread ? 'font-bold' : 'font-normal'} text-gray-700`}>
-          {!!isOwnLast && 'You: '}
-          {lastMsg?.body || (lastMsg?.photos?.length ? 'Photo' : 'No messages yet')}
-        </Text>
+        <View className="flex-row items-center">
+          <Text className={`flex-1 text-base ${isUnread ? 'font-bold' : 'font-normal'} text-gray-700`} numberOfLines={1}>
+            {!!isOwnLast && 'You: '}
+            {lastMsg?.body || (lastMsg?.photos?.length ? 'Photo' : 'No messages yet')}
+          </Text>
+          {isUnread ? (
+            <View className="w-3 h-3 rounded-full bg-indigo-500 ml-1" />
+          ) : isOwnLast ? (
+            <Ionicons
+              name={isRead ? 'checkmark-done' : 'checkmark'}
+              size={14}
+              color={isRead ? '#6366f1' : '#9ca3af'}
+              style={{ marginLeft: 4 }}
+            />
+          ) : null}
+        </View>
       </View>
-
-      {isUnread ? (
-        <View className="w-3 h-3 rounded-full bg-indigo-500 ml-2" />
-      ) : isOwnLast ? (
-        <Ionicons
-          name={isRead ? 'checkmark-done' : 'checkmark'}
-          size={14}
-          color={isRead ? '#6366f1' : '#9ca3af'}
-        />
-      ) : null}
     </Pressable>
   )
 }

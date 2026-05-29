@@ -1,10 +1,12 @@
 import { Stack } from "expo-router";
 import './global.css'
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <NotificationProvider>
       <Stack>
         <Stack.Screen 
           name="(tabs)"
@@ -27,6 +29,7 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
       </Stack>
+      </NotificationProvider>
     </AuthProvider>
   )
 }

@@ -3,6 +3,7 @@ import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-n
 import { useFocusEffect, useRouter } from 'expo-router'
 import axios from 'axios'
 import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications } from '@/contexts/NotificationContext'
 import { Conversation } from '@/types/chat'
 import ConversationPreview from "@/components/chat/ConversationPreview"
 
@@ -10,6 +11,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 const ChatsScreen = () => {
   const {authState} = useAuth();
+  const { subscribe } = useNotifications();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,42 @@ const ChatsScreen = () => {
       router.replace('/(auth)/login')
     }
   }, [authState.isLoading, authState.isAuthenticated])
+
+  useEffect(() => {
+    const unsubNewMessage = subscribe('new_message', (payload) => {
+      setConversations(prev => {
+        const updated = prev.map(c =>
+          c.id === payload.conversation_id
+            ? { ...c, last_message: { ...payload.last_message, photos: [], sender_username: '', read_by: [] } }
+            : c
+        )
+        const idx = updated.findIndex(c => c.id === payload.conversation_id)
+        if (idx > 0) {
+          const [conv] = updated.splice(idx, 1)
+          updated.unshift(conv)
+        }
+        return updated
+      })
+    })
+
+    const unsubMessageRead = subscribe('message_read', (payload) => {
+      setConversations(prev => prev.map(c =>
+        c.id === payload.conversation_id && c.last_message?.id === payload.message_id
+          ? { ...c, last_message: { ...c.last_message!, read_by: [...c.last_message!.read_by, payload.read_by_user_id] } }
+          : c
+      ))
+    })
+
+    const unsubAllRead = subscribe('all_messages_read', (payload) => {
+      setConversations(prev => prev.map(c =>
+        c.id === payload.conversation_id && c.last_message && c.last_message.sender_id !== payload.read_by_user_id && !c.last_message.read_by.includes(payload.read_by_user_id)
+          ? { ...c, last_message: { ...c.last_message, read_by: [...c.last_message.read_by, payload.read_by_user_id] } }
+          : c
+      ))
+    })
+
+    return () => { unsubNewMessage(); unsubMessageRead(); unsubAllRead() }
+  }, [subscribe])
 
   useFocusEffect(useCallback(() => {
     if (authState.isAuthenticated) {
