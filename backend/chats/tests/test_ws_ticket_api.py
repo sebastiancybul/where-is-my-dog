@@ -21,21 +21,21 @@ class WsTicketApiTests(APITestCase):
         res = self.client.post(WS_TICKET_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    @patch('chats.views.converstaion.generate_ticket', return_value='fake_ticket')
+    @patch('chats.views.conversation.generate_ticket', return_value='fake_ticket')
     def test_authenticated_returns_200(self, _):
         user = create_user()
         self.client.force_authenticate(user=user)
         res = self.client.post(WS_TICKET_URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    @patch('chats.views.converstaion.generate_ticket', return_value='fake_ticket')
+    @patch('chats.views.conversation.generate_ticket', return_value='fake_ticket')
     def test_ticket_is_in_response(self, _):
         user = create_user()
         self.client.force_authenticate(user=user)
         res = self.client.post(WS_TICKET_URL)
         self.assertIn('ticket', res.data)
 
-    @patch('chats.views.converstaion.generate_ticket', return_value='fake_ticket')
+    @patch('chats.views.conversation.generate_ticket', return_value='fake_ticket')
     def test_ticket_is_a_non_empty_string(self, _):
         user = create_user()
         self.client.force_authenticate(user=user)

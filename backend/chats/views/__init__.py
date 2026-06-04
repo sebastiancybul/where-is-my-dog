@@ -1,3 +1,3 @@
-from .converstaion import ConversationViewSet, WsTicketView
+from .conversation import ConversationViewSet, WsTicketView
 
 __all__ = ['ConversationViewSet', 'WsTicketView']
