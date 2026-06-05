@@ -1,13 +1,15 @@
 import React, { useCallback, useRef, useState } from 'react'
 import {
   View, Text, FlatList, TextInput, Pressable,
-  ActivityIndicator, KeyboardAvoidingView, Platform,
+  ActivityIndicator, KeyboardAvoidingView, Platform, Modal, Image, Alert,
 } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import axios from 'axios'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/contexts/AuthContext'
-import { Message, WsIncomingMessage } from '@/types/chat'
+import { Message, PickedImage, WsIncomingMessage } from '@/types/chat'
+import { pickFromLibrary, takePhoto } from '@/utils/imagePicker'
+import { uploadChatImage } from '@/utils/chatApi'
 import MessageBubble from '@/components/chat/MessageBubble'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
@@ -26,6 +28,8 @@ const ConversationScreen = () => {
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
   const [input, setInput] = useState('');
+  const [zoomUri, setZoomUri] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<PickedImage | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const fetchMessages = async () => {
@@ -52,16 +56,22 @@ const ConversationScreen = () => {
         const data: WsIncomingMessage = JSON.parse(event.data);
 
         if (data.type === 'chat_message') {
-          const newMessage: Message = {
-            id: data.message_id,
-            body: data.body,
-            photos: [],
-            sender_id: data.sender_id,
-            sender_username: data.sender_username,
-            created_at: data.created_at,
-            read_by: [],
+          if (data.sender_id === authState.user!.id && (data.photos?.length ?? 0) > 0) {
+            return
           }
-          setMessages((prev) => [newMessage, ...prev])
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === data.message_id)) return prev
+            const newMessage: Message = {
+              id: data.message_id,
+              body: data.body,
+              photos: data.photos ?? [],
+              sender_id: data.sender_id,
+              sender_username: data.sender_username,
+              created_at: data.created_at,
+              read_by: [],
+            }
+            return [newMessage, ...prev]
+          })
         }
 
         if (data.type === 'message_read') {
@@ -108,6 +118,49 @@ const ConversationScreen = () => {
     setInput('')
   }
 
+  const handlePick = async (source: 'camera' | 'library') => {
+    const picked = source === 'camera' ? await takePhoto() : await pickFromLibrary()
+    if (picked) setPendingImage(picked)
+  }
+
+  const sendImage = async () => {
+    if (!pendingImage) return
+    const image = pendingImage
+    setPendingImage(null)
+
+    const tempId = -Date.now()
+    const optimistic: Message = {
+      id: tempId,
+      body: '',
+      photos: [{ id: tempId, url: image.uri, uploaded_at: new Date().toISOString() }],
+      sender_id: authState.user!.id,
+      sender_username: authState.user!.username,
+      created_at: new Date().toISOString(),
+      read_by: [],
+      status: 'sending',
+    }
+    setMessages((prev) => [optimistic, ...prev])
+
+    try {
+      const saved = await uploadChatImage(id, image)
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...saved, status: 'sent' } : m))
+      )
+    } catch {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId))
+      setPendingImage(image)
+      Alert.alert('Błąd', 'Nie udało się wysłać zdjęcia. Spróbuj ponownie.')
+    }
+  }
+
+  const handleSend = () => {
+    if (pendingImage) {
+      sendImage()
+      return
+    }
+    sendMessage()
+  }
+
   const markRead = (messageId: number) => {
     if (!wsConnected) return
     wsRef!.current!.send(JSON.stringify({ type: 'mark_read', message_id: messageId }))
@@ -150,6 +203,7 @@ const ConversationScreen = () => {
           <MessageBubble
             message={item}
             isOwn={item.sender_id === authState.user!.id}
+            onPhotoPress={setZoomUri}
             onVisible={() => {
               if (
                 item.sender_id !== authState.user!.id &&
@@ -162,7 +216,27 @@ const ConversationScreen = () => {
         )}
       />
 
-      <View className="flex-row items-center px-3 py-2 border-t border-gray-100 gap-2">
+      {pendingImage && (
+        <View className="px-3 pt-2 border-t border-gray-100">
+          <View className="w-20 h-20">
+            <Image source={{ uri: pendingImage.uri }} className="w-20 h-20 rounded-xl" />
+            <Pressable
+              onPress={() => setPendingImage(null)}
+              className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 active:opacity-80"
+            >
+              <Ionicons name="close" size={14} color="white" />
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      <View className={`flex-row items-center px-3 py-2 gap-2 ${pendingImage ? '' : 'border-t border-gray-100'}`}>
+        <Pressable onPress={() => handlePick('camera')} className="w-9 h-9 items-center justify-center mb-6 active:opacity-60">
+          <Ionicons name="camera-outline" size={24} color="#1e293b" />
+        </Pressable>
+        <Pressable onPress={() => handlePick('library')} className="w-9 h-9 items-center justify-center mb-6 active:opacity-60">
+          <Ionicons name="image-outline" size={24} color="#1e293b" />
+        </Pressable>
         <TextInput
           value={input}
           onChangeText={setInput}
@@ -172,13 +246,33 @@ const ConversationScreen = () => {
           multiline
         />
         <Pressable
-          onPress={sendMessage}
-          disabled={!wsConnected}
-          className={`w-10 h-10 rounded-full items-center justify-center mb-6 ${wsConnected ? 'bg-slate-800 active:opacity-70' : 'bg-gray-300'}`}
+          onPress={handleSend}
+          disabled={pendingImage ? false : (!input.trim() || !wsConnected)}
+          className={`w-10 h-10 rounded-full items-center justify-center mb-6 ${pendingImage || (input.trim() && wsConnected) ? 'bg-slate-800 active:opacity-70' : 'bg-gray-300'}`}
         >
           <Ionicons name="send" size={18} color="white" />
         </Pressable>
       </View>
+
+      <Modal
+        visible={!!zoomUri}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setZoomUri(null)}
+      >
+        <Pressable
+          className="flex-1 bg-black/95 items-center justify-center"
+          onPress={() => setZoomUri(null)}
+        >
+          {zoomUri && (
+            <Image
+              source={{ uri: zoomUri }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="contain"
+            />
+          )}
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   )
 }

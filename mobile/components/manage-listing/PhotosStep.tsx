@@ -1,8 +1,8 @@
-import { View, Text, Image, Pressable, Alert } from 'react-native';
-import React, { useState } from 'react';
-import * as ImagePicker from "expo-image-picker";
+import { View, Text, Image, Pressable } from 'react-native';
+import React from 'react';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { PhotoManage } from "@/types/listingForm";
+import { pickFromLibrary, takePhoto } from '@/utils/imagePicker';
 
 type Props = {
   photos: PhotoManage[];
@@ -13,55 +13,23 @@ type Props = {
 
 const PhotosStep = ({photos, setPhotos, toDeletePhotos, setToDeletePhotos}: Props) => {
   const pickImageAsync = async() => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      Alert.alert('Permission required', 'Permission to access the media library is required.');
-      return;
-    }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const picked = await pickFromLibrary({
       mediaTypes: ['images', 'videos'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.7,
     });
-
-    console.log(result);
-
-    if (!result.canceled) {
-      setPhotos([
-        ...photos,
-        {
-          type: 'new',
-          uri: result.assets[0].uri
-        }
-      ]);
+    if (picked) {
+      setPhotos([...photos, { type: 'new', uri: picked.uri }]);
     }
   }
 
-  const takePhotoAsync = async() => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert("Brak dostępu", "Musisz zezwolić na dostęp do aparatu, aby zrobić zdjęcie.");
-      return;
-    }
-
-    let result = await ImagePicker.launchCameraAsync({
+  const takePhotoAsync = async () => {
+    const picked = await takePhoto({
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.7,
     });
-
-    if (!result.canceled) {
-      setPhotos([
-        ...photos,
-        {
-          type: 'new',
-          uri: result.assets[0].uri
-        }
-      ]);
+    if (picked) {
+      setPhotos([...photos, { type: 'new', uri: picked.uri }]);
     }
   }
 

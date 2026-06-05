@@ -52,7 +52,7 @@ const ConversationPreview = ({ conversation, currentUserId, onPress }: Props) =>
         <View className="flex-row items-center">
           <Text className={`flex-1 text-base ${isUnread ? 'font-bold' : 'font-normal'} text-gray-700`} numberOfLines={1}>
             {!!isOwnLast && 'You: '}
-            {lastMsg?.body || (lastMsg?.photos?.length ? 'Photo' : 'No messages yet')}
+            {lastMsg?.body || ((lastMsg?.photos?.length || lastMsg?.has_photo) ? 'Photo' : 'No messages yet')}
           </Text>
           {isUnread ? (
             <View className="w-3 h-3 rounded-full bg-indigo-500 ml-1" />

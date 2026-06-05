@@ -12,6 +12,8 @@ export interface Message {
   sender_username: string
   created_at: string
   read_by: number[]
+  status?: 'sending' | 'sent' | 'failed'
+  has_photo?: boolean
 }
 
 export interface OtherParticipant {
@@ -39,6 +41,7 @@ export type WsIncomingMessage =
       sender_id: number
       sender_username: string
       created_at: string
+      photos: MessagePhoto[]
     }
   | {
       type: 'message_read'
@@ -55,3 +58,11 @@ export type WsIncomingMessage =
       type: 'error'
       code: string
     }
+
+export interface PickedImage {
+  uri: string
+  name: string
+  type: string
+  width?: number
+  height?: number
+}
