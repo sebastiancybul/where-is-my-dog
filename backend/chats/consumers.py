@@ -112,6 +112,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                             "last_message": {
                                 "id": message.pk,
                                 "body": message.body,
+                                "has_photo": False,
                                 "sender_id": message.sender_id,
                                 "created_at": message.created_at.isoformat(),
                             },
@@ -161,6 +162,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "sender_id": event["sender_id"],
                     "sender_username": event["sender_username"],
                     "created_at": event["created_at"],
+                    "photos": event.get("photos", []),
                 }
             )
         )

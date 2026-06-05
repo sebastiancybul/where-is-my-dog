@@ -276,6 +276,7 @@ components:
         - sender_id
         - sender_username
         - created_at
+        - photos
       properties:
         type:
           type: string
@@ -296,6 +297,13 @@ components:
           type: string
           format: date-time
           description: ISO 8601 UTC timestamp of message creation
+        photos:
+          type: array
+          description: >
+            Photos attached to the message. Always present; empty for
+            text-only messages, one entry per uploaded image otherwise.
+          items:
+            $ref: '#/components/schemas/MessagePhoto'
       example:
         type: chat_message
         message_id: 42
@@ -303,6 +311,29 @@ components:
         sender_id: 7
         sender_username: jan_kowalski
         created_at: '2026-05-22T14:30:00.000Z'
+        photos: []
+    MessagePhoto:
+      type: object
+      required:
+        - id
+        - url
+        - uploaded_at
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the photo
+        url:
+          type: string
+          format: uri
+          description: Cloudinary secure URL of the uploaded image
+        uploaded_at:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp of the upload
+      example:
+        id: 3
+        url: https://res.cloudinary.com/demo/image/upload/v1/chats/photos/abc.jpg
+        uploaded_at: '2026-05-22T14:31:00.000Z'
     MessageReadPayload:
       type: object
       required:
@@ -421,6 +452,7 @@ components:
           required:
             - id
             - body
+            - has_photo
             - sender_id
             - created_at
           properties:
@@ -429,7 +461,13 @@ components:
               description: ID of the new message
             body:
               type: string
-              description: Text content of the message
+              description: Text content of the message (empty for photo messages)
+            has_photo:
+              type: boolean
+              description: >
+                True if the message contains a photo. Clients should render a
+                localized placeholder (e.g. "📷 Photo") instead of `body` when
+                this is true.
             sender_id:
               type: integer
               description: User ID of the sender
@@ -442,6 +480,7 @@ components:
         last_message:
           id: 42
           body: Has anyone seen my dog near the park?
+          has_photo: false
           sender_id: 7
           created_at: '2026-05-22T14:30:00.000Z'
     MessageReadNotificationPayload:

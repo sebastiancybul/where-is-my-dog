@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from notifications.notify import notify_user
 from chats.models import (
     Conversation,
     ConversationMembership,
@@ -203,7 +204,7 @@ class ConversationViewSet(viewsets.GenericViewSet):
         message = Message.objects.create(
             conversation=conversation, sender=request.user, body=""
         )
-        MessagePhoto.objects.create(
+        photo = MessagePhoto.objects.create(
             message=message,
             image=result["secure_url"],
             cloudinary_public_id=result["public_id"],
@@ -218,8 +219,35 @@ class ConversationViewSet(viewsets.GenericViewSet):
                 "sender_id": request.user.pk,
                 "sender_username": request.user.username,
                 "created_at": message.created_at.isoformat(),
+                "photos": [
+                    {
+                        "id": photo.id,
+                        "url": result["secure_url"],
+                        "uploaded_at": photo.uploaded_at.isoformat(),
+                    }
+                ],
             },
         )
+
+        members = ConversationMembership.objects.filter(
+            conversation=conversation
+        )
+        for member in members:
+            if request.user.id != member.user_id:
+                async_to_sync(notify_user)(
+                    user_id=member.user_id,
+                    event_type="new_message",
+                    payload={
+                        "conversation_id": conversation.pk,
+                        "last_message": {
+                            "id": message.pk,
+                            "body": "",
+                            "has_photo": True,
+                            "sender_id": message.sender_id,
+                            "created_at": message.created_at.isoformat(),
+                        },
+                    },
+                )
 
         return Response(
             MessageSerializer(message).data, status=status.HTTP_201_CREATED
