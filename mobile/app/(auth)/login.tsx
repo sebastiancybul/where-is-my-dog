@@ -92,7 +92,7 @@ const Login = () => {
 
           <Pressable onPress={() => router.push('/(auth)/register')} className="active:opacity-80">
             <Text className="text-center text-blue-600 font-medium">
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Text>
           </Pressable>
 

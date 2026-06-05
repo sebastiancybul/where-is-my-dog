@@ -28,7 +28,7 @@ const DEFAULT_FILTERS: Filters = {
 
 
 
-const index = () => {
+const Index = () => {
   const [listings, setListings] = useState<ListingCardItem[]>([]);
   const [listingType, setListingType] = useState<'found' | 'lost'>('lost');
   const [loading, setLoading] = useState<boolean>(true);
@@ -354,4 +354,4 @@ const index = () => {
   )
 }
 
-export default index
+export default Index

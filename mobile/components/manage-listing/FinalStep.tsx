@@ -106,7 +106,7 @@ const FinalStep = ({type, listingData, photos, location, onSaveListing, loading,
 
                 {!isConfirmed && reward.length > 0 && (
                   <Text className="text-blue-500 text-[10px] mt-1 ml-1 font-medium italic">
-                    Tap "Set" to save the amount
+                    Tap &quot;Set&quot; to save the amount
                   </Text>
                 )}
               </View>

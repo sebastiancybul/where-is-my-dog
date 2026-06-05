@@ -4,7 +4,7 @@ import ListingFormScreen from "@/components/manage-listing/ListingFormScreen";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 
-const edit = () => {
+const Edit = () => {
   const { listing: listingData } = useListing()
   const router = useRouter();
 
@@ -20,4 +20,4 @@ const edit = () => {
   )
 }
 
-export default edit
+export default Edit

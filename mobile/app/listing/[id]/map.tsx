@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Circle, Marker } from "react-native-maps";
 
-const map = () => {
+const MapScreen = () => {
   const router = useRouter();
   const { listing: listingData } = useListing();
 
@@ -72,4 +72,4 @@ const map = () => {
   )
 }
 
-export default map
+export default MapScreen
