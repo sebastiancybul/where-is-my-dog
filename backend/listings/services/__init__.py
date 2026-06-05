@@ -1,3 +1,3 @@
 from .duplicate_detector import DuplicateDetector
 
-__all__ = ['DuplicateDetector']
+__all__ = ["DuplicateDetector"]

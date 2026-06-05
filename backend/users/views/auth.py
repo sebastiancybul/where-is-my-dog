@@ -10,7 +10,7 @@ from ..schemas import register_schema, login_schema, current_user_schema
 
 
 @register_schema
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def register(request):
     """Register a new user account"""
@@ -25,48 +25,42 @@ def register(request):
     refresh = RefreshToken.for_user(user)
 
     tokens = {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
     }
 
-    return Response({
-        'user': UserSerializer(user).data,
-        'tokens': tokens
-    }, status=status.HTTP_201_CREATED)
+    return Response(
+        {"user": UserSerializer(user).data, "tokens": tokens},
+        status=status.HTTP_201_CREATED,
+    )
 
 
 @login_schema
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def login(request):
     """Login user and return JWT tokens"""
 
-    email = request.data.get('email')
-    password = request.data.get('password')
+    email = request.data.get("email")
+    password = request.data.get("password")
 
     user = authenticate(email=email, password=password)
 
     if user is None:
         return Response(
-            {'error': 'Invalid credentials'},
-            status=status.HTTP_401_UNAUTHORIZED
+            {"error": "Invalid credentials"},
+            status=status.HTTP_401_UNAUTHORIZED,
         )
 
     refresh = RefreshToken.for_user(user)
 
-    tokens = {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token)
-    }
+    tokens = {"refresh": str(refresh), "access": str(refresh.access_token)}
 
-    return Response({
-        'user': UserSerializer(user).data,
-        'tokens': tokens
-    })
+    return Response({"user": UserSerializer(user).data, "tokens": tokens})
 
 
 @current_user_schema
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def current_user(request):
     """Get current logged-in user"""

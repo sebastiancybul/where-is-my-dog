@@ -1,6 +1,7 @@
 """
 Tests for Listing, Photo and Location models
 """
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
@@ -13,12 +14,10 @@ from ..models import Listing, Photo, Location
 User = get_user_model()
 
 
-def create_user(username='testuser', email='test@example.com'):
+def create_user(username="testuser", email="test@example.com"):
     """Helper function to create a test user"""
     return User.objects.create_user(
-        username=username,
-        email=email,
-        password='testpass123'
+        username=username, email=email, password="testpass123"
     )
 
 
@@ -34,16 +33,16 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Found Golden Retriever',
-            description='Found near park',
-            breed='Golden Retriever',
+            title="Found Golden Retriever",
+            description="Found near park",
+            breed="Golden Retriever",
             size=Listing.SIZE_LARGE,
         )
 
         self.assertEqual(listing.user, self.user)
         self.assertEqual(listing.type, Listing.TYPE_FOUND)
         self.assertEqual(listing.status, Listing.STATUS_ACTIVE)
-        self.assertEqual(listing.title, 'Found Golden Retriever')
+        self.assertEqual(listing.title, "Found Golden Retriever")
         self.assertTrue(listing.is_active)
 
     def test_create_lost_listing_successful(self):
@@ -51,9 +50,9 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_LOST,
-            title='Lost Beagle',
-            description='Lost on Monday',
-            breed='Beagle',
+            title="Lost Beagle",
+            description="Lost on Monday",
+            breed="Beagle",
             size=Listing.SIZE_MEDIUM,
         )
 
@@ -67,8 +66,8 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Found Dog',
-            description='Test',
+            title="Found Dog",
+            description="Test",
         )
 
         after_creation = timezone.now()
@@ -86,8 +85,8 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_LOST,
-            title='Lost Dog',
-            description='Test',
+            title="Lost Dog",
+            description="Test",
         )
 
         after_creation = timezone.now()
@@ -103,8 +102,8 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Test',
-            description='Test',
+            title="Test",
+            description="Test",
         )
 
         self.assertEqual(listing.status, Listing.STATUS_ACTIVE)
@@ -117,8 +116,8 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Test',
-            description='Test',
+            title="Test",
+            description="Test",
         )
 
         self.assertTrue(listing.is_active)
@@ -131,8 +130,8 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Test',
-            description='Test',
+            title="Test",
+            description="Test",
         )
 
         self.assertFalse(listing.is_expired)
@@ -145,9 +144,9 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Test',
-            description='Test',
-            search_radius_km=0
+            title="Test",
+            description="Test",
+            search_radius_km=0,
         )
 
         with self.assertRaises(ValidationError):
@@ -158,9 +157,9 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Test',
-            description='Test',
-            search_radius_km=11
+            title="Test",
+            description="Test",
+            search_radius_km=11,
         )
 
         with self.assertRaises(ValidationError):
@@ -171,11 +170,11 @@ class ListingModelTests(TestCase):
         listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Found Golden Retriever',
-            description='Test',
+            title="Found Golden Retriever",
+            description="Test",
         )
 
-        self.assertEqual(str(listing), 'Found Dog: Found Golden Retriever')
+        self.assertEqual(str(listing), "Found Dog: Found Golden Retriever")
 
 
 class PhotoModelTests(TestCase):
@@ -187,28 +186,28 @@ class PhotoModelTests(TestCase):
         self.listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Test Listing',
-            description='Test',
+            title="Test Listing",
+            description="Test",
         )
 
     def test_create_photo_successful(self):
         """Test creating a photo for listing"""
         photo = Photo.objects.create(
             listing=self.listing,
-            cloudinary_url='https://res.cloudinary.com/test/image.jpg',
-            cloudinary_public_id='test/image',
+            cloudinary_url="https://res.cloudinary.com/test/image.jpg",
+            cloudinary_public_id="test/image",
             order_index=0,
         )
 
         self.assertEqual(photo.listing, self.listing)
         self.assertEqual(photo.order_index, 0)
-        self.assertIn('cloudinary.com', photo.cloudinary_url)
+        self.assertIn("cloudinary.com", photo.cloudinary_url)
 
     def test_photo_default_order_index(self):
         """Test photo has default order_index of 0"""
         photo = Photo.objects.create(
             listing=self.listing,
-            cloudinary_url='https://res.cloudinary.com/test/image.jpg',
+            cloudinary_url="https://res.cloudinary.com/test/image.jpg",
         )
 
         self.assertEqual(photo.order_index, 0)
@@ -217,12 +216,12 @@ class PhotoModelTests(TestCase):
         """Test multiple photos are ordered correctly"""
         photo1 = Photo.objects.create(
             listing=self.listing,
-            cloudinary_url='https://res.cloudinary.com/test/image1.jpg',
+            cloudinary_url="https://res.cloudinary.com/test/image1.jpg",
             order_index=1,
         )
         photo2 = Photo.objects.create(
             listing=self.listing,
-            cloudinary_url='https://res.cloudinary.com/test/image2.jpg',
+            cloudinary_url="https://res.cloudinary.com/test/image2.jpg",
             order_index=0,
         )
 
@@ -234,11 +233,11 @@ class PhotoModelTests(TestCase):
         """Test __str__ method returns correct string"""
         photo = Photo.objects.create(
             listing=self.listing,
-            cloudinary_url='https://res.cloudinary.com/test/image.jpg',
+            cloudinary_url="https://res.cloudinary.com/test/image.jpg",
             order_index=0,
         )
 
-        self.assertEqual(str(photo), 'Photo 1 for Test Listing')
+        self.assertEqual(str(photo), "Photo 1 for Test Listing")
 
 
 class LocationModelTests(TestCase):
@@ -250,8 +249,8 @@ class LocationModelTests(TestCase):
         self.listing = Listing.objects.create(
             user=self.user,
             type=Listing.TYPE_FOUND,
-            title='Test Listing',
-            description='Test',
+            title="Test Listing",
+            description="Test",
         )
 
     def test_create_location_successful(self):
@@ -262,7 +261,7 @@ class LocationModelTests(TestCase):
             listing=self.listing,
             added_by_user=self.user,
             point=point,
-            address='Test Address, Lublin',
+            address="Test Address, Lublin",
         )
 
         self.assertEqual(location.listing, self.listing)
@@ -329,7 +328,7 @@ class LocationModelTests(TestCase):
             is_primary=True,
         )
 
-        self.assertEqual(str(location), 'Location for Test Listing (Primary)')
+        self.assertEqual(str(location), "Location for Test Listing (Primary)")
 
     def test_str_method_non_primary(self):
         """Test __str__ for non-primary location"""
@@ -341,4 +340,4 @@ class LocationModelTests(TestCase):
             is_primary=False,
         )
 
-        self.assertEqual(str(location), 'Location for Test Listing')
+        self.assertEqual(str(location), "Location for Test Listing")

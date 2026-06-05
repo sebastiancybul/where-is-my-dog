@@ -12,22 +12,22 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'id',
-            'username',
-            'email',
-            'phone',
-            'profile_photo',
-            'email_verified',
-            'is_moderator',
-            'is_banned',
-            'created_at',
+            "id",
+            "username",
+            "email",
+            "phone",
+            "profile_photo",
+            "email_verified",
+            "is_moderator",
+            "is_banned",
+            "created_at",
         )
         read_only_fields = (
-            'id',
-            'email_verified',
-            'is_moderator',
-            'is_banned',
-            'created_at',
+            "id",
+            "email_verified",
+            "is_moderator",
+            "is_banned",
+            "created_at",
         )
 
 
@@ -37,24 +37,22 @@ class RegistrationSerializer(serializers.ModelSerializer):
     """
 
     password2 = serializers.CharField(
-        write_only=True,
-        required=True,
-        style={'input_type': 'password'}
+        write_only=True, required=True, style={"input_type": "password"}
     )
 
     class Meta:
         model = User
         fields = (
-            'username',
-            'email',
-            'password',
-            'password2',
-            'phone',
+            "username",
+            "email",
+            "password",
+            "password2",
+            "phone",
         )
         extra_kwargs = {
-            'password': {
-                'write_only': True,
-                'style': {'input_type': 'password'}
+            "password": {
+                "write_only": True,
+                "style": {"input_type": "password"},
             }
         }
 
@@ -63,10 +61,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
         Validate that passwords match
         """
 
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({
-                "password": "Passwords do not match"
-            })
+        if attrs["password"] != attrs["password2"]:
+            raise serializers.ValidationError(
+                {"password": "Passwords do not match"}
+            )
 
         return attrs
 
@@ -74,13 +72,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
         """
         Create user iwth hashed password
         """
-        validated_data.pop('password2')
+        validated_data.pop("password2")
 
         user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            phone=validated_data.get('phone', '')
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+            phone=validated_data.get("phone", ""),
         )
 
         return user
@@ -91,15 +89,12 @@ class UserPublicSerializer(serializers.ModelSerializer):
     Public user representation safe for use in nested serializers.
     Excludes sensitive fields (email, phone).
     """
+
     profile_photo = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = (
-            'id',
-            'username',
-            'profile_photo'
-        )
+        fields = ("id", "username", "profile_photo")
         read_only_fields = fields
 
     def get_profile_photo(self, obj):
@@ -114,19 +109,28 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = (
-            'username',
-            'phone'
-        )
+        fields = ("username", "phone")
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
-            raise serializers.ValidationError("A user with that username already exists.")
+        if (
+            User.objects.filter(username=value)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError(
+                "A user with that username already exists."
+            )
         return value
 
     def validate_phone(self, value):
-        if User.objects.filter(phone=value).exclude(pk=self.instance.pk).exists():
-            raise serializers.ValidationError("This phone number is already in use.")
+        if (
+            User.objects.filter(phone=value)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError(
+                "This phone number is already in use."
+            )
         return value
 
 
@@ -136,24 +140,27 @@ class ChangePasswordSerializer(serializers.Serializer):
     new_password2 = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        if data['new_password'] != data['new_password2']:
-            raise serializers.ValidationError({"new_password2": "Passwords do not match"})
-        
-        user = self.context['request'].user
-        if not user.check_password(data['password']):
-            raise serializers.ValidationError({"password": "Password is incorrect."})
+        if data["new_password"] != data["new_password2"]:
+            raise serializers.ValidationError(
+                {"new_password2": "Passwords do not match"}
+            )
+
+        user = self.context["request"].user
+        if not user.check_password(data["password"]):
+            raise serializers.ValidationError(
+                {"password": "Password is incorrect."}
+            )
 
         return data
-    
 
 
 class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
-    
+
     def validate(self, data):
-        user = self.context['request'].user
-        if not user.check_password(data['password']):
-            raise serializers.ValidationError({"password": "Password is incorrect."})
+        user = self.context["request"].user
+        if not user.check_password(data["password"]):
+            raise serializers.ValidationError(
+                {"password": "Password is incorrect."}
+            )
         return data
-
-

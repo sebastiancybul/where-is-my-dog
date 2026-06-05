@@ -4,6 +4,14 @@ from .user import (
     UserPublicSerializer,
     UpdateProfileSerializer,
     ChangePasswordSerializer,
-    DeleteAccountSerializer
+    DeleteAccountSerializer,
 )
-__all__ = ['UserSerializer', 'RegistrationSerializer', 'UserPublicSerializer', 'UpdateProfileSerializer', 'ChangePasswordSerializer', 'DeleteAccountSerializer']
+
+__all__ = [
+    "UserSerializer",
+    "RegistrationSerializer",
+    "UserPublicSerializer",
+    "UpdateProfileSerializer",
+    "ChangePasswordSerializer",
+    "DeleteAccountSerializer",
+]

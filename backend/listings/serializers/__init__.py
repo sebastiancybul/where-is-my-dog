@@ -2,20 +2,20 @@ from .location import LocationSerializer
 from .photo import (
     PhotoSerializer,
     PhotoUploadSerializer,
-    PhotoDeleteSerializer
+    PhotoDeleteSerializer,
 )
 from .listing import (
     ListingSerializer,
     SimilarListingSerializer,
-    ListingListSerializer
+    ListingListSerializer,
 )
 
 __all__ = [
-    'LocationSerializer',
-    'PhotoSerializer',
-    'ListingSerializer',
-    'PhotoUploadSerializer',
-    'PhotoDeleteSerializer',
-    'SimilarListingSerializer',
-    'ListingListSerializer'
+    "LocationSerializer",
+    "PhotoSerializer",
+    "ListingSerializer",
+    "PhotoUploadSerializer",
+    "PhotoDeleteSerializer",
+    "SimilarListingSerializer",
+    "ListingListSerializer",
 ]

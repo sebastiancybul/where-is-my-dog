@@ -45,8 +45,7 @@ class UserNotificationConsumerTests(TransactionTestCase):
     def test_connect_with_valid_ticket(self):
         async def run():
             with patch(
-                "chats.middleware.consume_ticket",
-                return_value=self.user.pk
+                "chats.middleware.consume_ticket", return_value=self.user.pk
             ):
                 communicator = WebsocketCommunicator(
                     application, ws_notifications_url()
@@ -54,6 +53,7 @@ class UserNotificationConsumerTests(TransactionTestCase):
                 connected, _ = await communicator.connect()
                 self.assertTrue(connected)
                 await communicator.disconnect()
+
         async_to_sync(run)()
 
     def test_connect_with_invalid_ticket(self):
@@ -64,37 +64,33 @@ class UserNotificationConsumerTests(TransactionTestCase):
                 )
                 connected, _ = await communicator.connect()
                 self.assertFalse(connected)
+
         async_to_sync(run)()
 
     def test_recives_new_message_notifiaction(self):
         async def run():
             with patch(
                 "chats.middleware.consume_ticket",
-                return_value=self.other_user.pk
+                return_value=self.other_user.pk,
             ):
                 communicator1 = WebsocketCommunicator(
-                    application,
-                    ws_notifications_url()
+                    application, ws_notifications_url()
                 )
                 connected, _ = await communicator1.connect()
                 self.assertTrue(connected)
 
                 with patch(
                     "chats.middleware.consume_ticket",
-                    return_value=self.user.pk
+                    return_value=self.user.pk,
                 ):
                     communicator2 = WebsocketCommunicator(
-                        application,
-                        ws_chats_url(self.conversation.pk)
+                        application, ws_chats_url(self.conversation.pk)
                     )
                     connected, _ = await communicator2.connect()
                     self.assertTrue(connected)
 
                     await communicator2.send_json_to(
-                        {
-                            "type": "chat_message",
-                            "body": "Hello"
-                        }
+                        {"type": "chat_message", "body": "Hello"}
                     )
 
                 response = await communicator1.receive_json_from()
@@ -103,9 +99,10 @@ class UserNotificationConsumerTests(TransactionTestCase):
                 self.assertEqual(response["event_type"], "new_message")
                 self.assertEqual(
                     response["payload"]["conversation_id"],
-                    self.conversation.pk
+                    self.conversation.pk,
                 )
                 self.assertEqual(
                     response["payload"]["last_message"]["body"], "Hello"
                 )
+
         async_to_sync(run)()

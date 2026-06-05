@@ -17,5 +17,9 @@ def create_public_conversation(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Listing)
 def close_conversation_on_listing_end(sender, instance, **kwargs):
-    if instance.status in (Listing.STATUS_FOUND, Listing.STATUS_RETURNED, Listing.STATUS_EXPIRED):
+    if instance.status in (
+        Listing.STATUS_FOUND,
+        Listing.STATUS_RETURNED,
+        Listing.STATUS_EXPIRED,
+    ):
         Conversation.objects.filter(listing=instance).update(is_closed=True)

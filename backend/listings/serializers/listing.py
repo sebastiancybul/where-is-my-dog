@@ -12,27 +12,28 @@ class ListingListSerializer(serializers.ModelSerializer):
     Lightweight serializer for Listing model used in list views.
     Includes only essential fields.
     """
+
     primary_photo = serializers.SerializerMethodField()
     primary_location = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
         fields = (
-            'id',
-            'type',
-            'status',
-            'title',
-            'reward_offered',
-            'primary_photo',
-            'dog_name',
-            'primary_location',
-            'description',
-            'breed',
-            'age_estimate',
-            'color',
-            'has_collar',
-            'collar_color',
-            'created_at',
+            "id",
+            "type",
+            "status",
+            "title",
+            "reward_offered",
+            "primary_photo",
+            "dog_name",
+            "primary_location",
+            "description",
+            "breed",
+            "age_estimate",
+            "color",
+            "has_collar",
+            "collar_color",
+            "created_at",
         )
 
     def get_primary_location(self, obj):
@@ -45,7 +46,7 @@ class ListingListSerializer(serializers.ModelSerializer):
         return None
 
     def get_primary_photo(self, obj):
-        photo = obj.photos.order_by('order_index').first()
+        photo = obj.photos.order_by("order_index").first()
         if photo:
             return photo.thumbnail_url
         return None
@@ -67,35 +68,35 @@ class ListingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listing
         fields = (
-            'id',
-            'user',
-            'type',
-            'status',
-            'title',
-            'description',
-            'breed',
-            'size',
-            'color',
-            'gender',
-            'has_collar',
-            'collar_color',
-            'dog_name',
-            'age_estimate',
-            'special_marks',
-            'fostering_address',
-            'reward_offered',
-            'search_radius_km',
-            'photos',
-            'photo_count',
-            'locations',
-            'primary_location',
-            'created_at',
-            'updated_at',
+            "id",
+            "user",
+            "type",
+            "status",
+            "title",
+            "description",
+            "breed",
+            "size",
+            "color",
+            "gender",
+            "has_collar",
+            "collar_color",
+            "dog_name",
+            "age_estimate",
+            "special_marks",
+            "fostering_address",
+            "reward_offered",
+            "search_radius_km",
+            "photos",
+            "photo_count",
+            "locations",
+            "primary_location",
+            "created_at",
+            "updated_at",
         )
         read_only_fields = (
-            'id',
-            'created_at',
-            'updated_at',
+            "id",
+            "created_at",
+            "updated_at",
         )
 
     def get_primary_location(self, obj):
@@ -129,37 +130,35 @@ class SimilarListingSerializer(serializers.Serializer):
     """
     Serializer for duplicate detection request.
     """
+
     search_type = serializers.ChoiceField(
-        choices=['found', 'lost'],
-        help_text="Type of listings to search: 'found' or 'lost'"
+        choices=["found", "lost"],
+        help_text="Type of listings to search: 'found' or 'lost'",
     )
-    point = GeometryField(
-        help_text="Geographic location (GeoJSON Point)"
-    )
-    breed = serializers.CharField(
-        max_length=100,
-        help_text="Dog breed"
-    )
+    point = GeometryField(help_text="Geographic location (GeoJSON Point)")
+    breed = serializers.CharField(max_length=100, help_text="Dog breed")
     size = serializers.ChoiceField(
-        choices=['small', 'medium', 'large'],
-        help_text="Dog size"
+        choices=["small", "medium", "large"], help_text="Dog size"
     )
-    has_collar = serializers.BooleanField(
-        help_text="Whether dog has a collar"
-    )
+    has_collar = serializers.BooleanField(help_text="Whether dog has a collar")
     collar_color = serializers.CharField(
         max_length=50,
         required=False,
         allow_blank=True,
-        help_text="Collar color (only if has_collar=True)"
+        help_text="Collar color (only if has_collar=True)",
     )
 
     def validate(self, data):
         """
         Check that collar_color is provided if has_collar=True
         """
-        if data['has_collar'] and not data.get('collar_color'):
-            raise serializers.ValidationError({
-                'collar_color': 'Collar color is required when has_collar=True'
-            })
+        if data["has_collar"] and not data.get("collar_color"):
+            raise serializers.ValidationError(
+                {
+                    "collar_color": (
+                        "Collar color is required when "
+                        "has_collar=True"
+                    )
+                }
+            )
         return data

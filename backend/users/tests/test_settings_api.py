@@ -1,27 +1,28 @@
 """
 Tests for the settings API
 """
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase
 from rest_framework import status
 
-UPDATE_PROFILE_URL = reverse('users:settings-profile')
-CHANGE_PASSWORD_URL = reverse('users:settings-password')
-DELETE_ACCOUNT_URL = reverse('users:settings-account-delete')
+UPDATE_PROFILE_URL = reverse("users:settings-profile")
+CHANGE_PASSWORD_URL = reverse("users:settings-password")
+DELETE_ACCOUNT_URL = reverse("users:settings-account-delete")
 
-USERNAME = 'janek123'
-EMAIL = 'test@example.com'
-PASSWORD = 'testpass123'
+USERNAME = "janek123"
+EMAIL = "test@example.com"
+PASSWORD = "testpass123"
 
 
 def create_user(**params):
     """Create and return a new user"""
     defaults = {
-        'username': USERNAME,
-        'email': EMAIL,
-        'password': PASSWORD,
+        "username": USERNAME,
+        "email": EMAIL,
+        "password": PASSWORD,
     }
     defaults.update(params)
     return get_user_model().objects.create_user(**defaults)
@@ -31,7 +32,7 @@ class PublicSettingsApiTests(APITestCase):
     """Test unauthenticated settings endpoints"""
 
     def test_update_profile_unauthenticated_fails(self):
-        res = self.client.patch(UPDATE_PROFILE_URL, {'username': 'newname'})
+        res = self.client.patch(UPDATE_PROFILE_URL, {"username": "newname"})
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_change_password_unauthenticated_fails(self):
@@ -51,31 +52,33 @@ class PrivateUpdateProfileApiTests(APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_update_username_success(self):
-        res = self.client.patch(UPDATE_PROFILE_URL, {'username': 'newusername'})
+        res = self.client.patch(
+            UPDATE_PROFILE_URL, {"username": "newusername"}
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.username, 'newusername')
+        self.assertEqual(self.user.username, "newusername")
 
     def test_update_phone_success(self):
-        res = self.client.patch(UPDATE_PROFILE_URL, {'phone': '999888777'})
+        res = self.client.patch(UPDATE_PROFILE_URL, {"phone": "999888777"})
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.phone, '999888777')
+        self.assertEqual(self.user.phone, "999888777")
 
     def test_update_username_and_phone_success(self):
-        payload = {'username': 'newname', 'phone': '111222333'}
+        payload = {"username": "newname", "phone": "111222333"}
         res = self.client.patch(UPDATE_PROFILE_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.username, 'newname')
-        self.assertEqual(self.user.phone, '111222333')
+        self.assertEqual(self.user.username, "newname")
+        self.assertEqual(self.user.phone, "111222333")
 
     def test_update_with_taken_username_fails(self):
-        create_user(username='taken', email='other@example.com')
-        res = self.client.patch(UPDATE_PROFILE_URL, {'username': 'taken'})
+        create_user(username="taken", email="other@example.com")
+        res = self.client.patch(UPDATE_PROFILE_URL, {"username": "taken"})
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.user.refresh_from_db()
@@ -98,45 +101,45 @@ class PrivateChangePasswordApiTests(APITestCase):
 
     def test_change_password_success(self):
         payload = {
-            'password': PASSWORD,
-            'new_password': 'newsecurepass456',
-            'new_password2': 'newsecurepass456',
+            "password": PASSWORD,
+            "new_password": "newsecurepass456",
+            "new_password2": "newsecurepass456",
         }
         res = self.client.patch(CHANGE_PASSWORD_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
-        self.assertTrue(self.user.check_password('newsecurepass456'))
+        self.assertTrue(self.user.check_password("newsecurepass456"))
 
     def test_change_password_wrong_old_password_fails(self):
         payload = {
-            'password': 'wrongpassword',
-            'new_password': 'newsecurepass456',
-            'new_password2': 'newsecurepass456',
+            "password": "wrongpassword",
+            "new_password": "newsecurepass456",
+            "new_password2": "newsecurepass456",
         }
         res = self.client.patch(CHANGE_PASSWORD_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('password', res.data)
+        self.assertIn("password", res.data)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(PASSWORD))
 
     def test_change_password_mismatched_new_passwords_fails(self):
         payload = {
-            'password': PASSWORD,
-            'new_password': 'newsecurepass456',
-            'new_password2': 'differentpass789',
+            "password": PASSWORD,
+            "new_password": "newsecurepass456",
+            "new_password2": "differentpass789",
         }
         res = self.client.patch(CHANGE_PASSWORD_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('new_password2', res.data)
+        self.assertIn("new_password2", res.data)
 
     def test_old_password_no_longer_works_after_change(self):
         payload = {
-            'password': PASSWORD,
-            'new_password': 'newsecurepass456',
-            'new_password2': 'newsecurepass456',
+            "password": PASSWORD,
+            "new_password": "newsecurepass456",
+            "new_password2": "newsecurepass456",
         }
         self.client.patch(CHANGE_PASSWORD_URL, payload)
 
@@ -152,26 +155,22 @@ class PrivateDeleteAccountApiTests(APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_delete_account_success(self):
-        res = self.client.post(DELETE_ACCOUNT_URL, {'password': PASSWORD})
+        res = self.client.post(DELETE_ACCOUNT_URL, {"password": PASSWORD})
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertFalse(
-            get_user_model().objects.filter(email=EMAIL).exists()
-        )
+        self.assertFalse(get_user_model().objects.filter(email=EMAIL).exists())
 
     def test_delete_account_wrong_password_fails(self):
-        res = self.client.post(DELETE_ACCOUNT_URL, {'password': 'wrongpassword'})
+        res = self.client.post(
+            DELETE_ACCOUNT_URL, {"password": "wrongpassword"}
+        )
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('password', res.data)
-        self.assertTrue(
-            get_user_model().objects.filter(email=EMAIL).exists()
-        )
+        self.assertIn("password", res.data)
+        self.assertTrue(get_user_model().objects.filter(email=EMAIL).exists())
 
     def test_delete_account_missing_password_fails(self):
         res = self.client.post(DELETE_ACCOUNT_URL, {})
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue(
-            get_user_model().objects.filter(email=EMAIL).exists()
-        )
+        self.assertTrue(get_user_model().objects.filter(email=EMAIL).exists())

@@ -19,6 +19,7 @@ pillow>=10.1
 
 # Code Quality & Linting
 flake8>=7.0
+black>=24.0
 
 # Celery + Redis (Async tasks)
 celery[redis]>=5.3

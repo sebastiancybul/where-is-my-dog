@@ -1,6 +1,7 @@
 """
 Tests for User model
 """
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
@@ -13,14 +14,12 @@ class UserModelTests(TestCase):
 
     def test_create_user_successful(self):
         """Test creating a user is successful"""
-        email = 'test@example.com'
-        password = 'testpass123'
-        username = 'testuser'
+        email = "test@example.com"
+        password = "testpass123"
+        username = "testuser"
 
         user = User.objects.create_user(
-            email=email,
-            password=password,
-            username=username
+            email=email, password=password, username=username
         )
 
         self.assertEqual(user.email, email)
@@ -32,68 +31,56 @@ class UserModelTests(TestCase):
 
     def test_email_normalized(self):
         """Test email domain is normalized"""
-        email = 'test@EXAMPLE.COM'
+        email = "test@EXAMPLE.COM"
         user = User.objects.create_user(
-            email=email,
-            password='test123',
-            username='testuser'
+            email=email, password="test123", username="testuser"
         )
 
-        self.assertEqual(user.email, 'test@example.com')
+        self.assertEqual(user.email, "test@example.com")
 
     def test_username_required(self):
         """Test creating user without username raises error"""
         with self.assertRaises((ValueError, IntegrityError)):
             User.objects.create_user(
-                email='test@example.com',
-                password='test123',
-                username=''
+                email="test@example.com", password="test123", username=""
             )
 
     def test_email_unique(self):
         """Test email must be unique"""
-        email = 'test@example.com'
+        email = "test@example.com"
         User.objects.create_user(
-            email=email,
-            password='test123',
-            username='user1'
+            email=email, password="test123", username="user1"
         )
 
         with self.assertRaises(IntegrityError):
             User.objects.create_user(
-                email=email,
-                password='test123',
-                username='user2'
+                email=email, password="test123", username="user2"
             )
 
     def test_full_name_with_names(self):
         """Test full_name property returns first + last name"""
         user = User.objects.create_user(
-            email='test@example.com',
-            password='test123',
-            username='testuser',
-            first_name='John',
-            last_name='Doe'
+            email="test@example.com",
+            password="test123",
+            username="testuser",
+            first_name="John",
+            last_name="Doe",
         )
 
-        self.assertEqual(user.full_name, 'John Doe')
+        self.assertEqual(user.full_name, "John Doe")
 
     def test_full_name_without_names(self):
         """Test full_name returns username if names not set"""
         user = User.objects.create_user(
-            email='test@example.com',
-            password='test123',
-            username='testuser'
+            email="test@example.com", password="test123", username="testuser"
         )
 
-        self.assertEqual(user.full_name, 'testuser')
+        self.assertEqual(user.full_name, "testuser")
 
     def test_str_method(self):
         """Test __str__ method returns username"""
         user = User.objects.create_user(
-            email='test@example.com',
-            password='test123',
-            username='testuser'
+            email="test@example.com", password="test123", username="testuser"
         )
 
-        self.assertEqual(str(user), 'testuser')
+        self.assertEqual(str(user), "testuser")

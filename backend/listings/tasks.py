@@ -13,8 +13,7 @@ def check_and_expire_listings():
     now = timezone.now()
 
     expired_listings = Listing.objects.filter(
-        expires_at__lt=now,
-        status=Listing.STATUS_ACTIVE
+        expires_at__lt=now, status=Listing.STATUS_ACTIVE
     )
 
     count = expired_listings.update(status=Listing.STATUS_EXPIRED)

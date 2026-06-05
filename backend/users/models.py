@@ -6,47 +6,45 @@ from cloudinary.models import CloudinaryField
 class User(AbstractUser):
     """
     Custom User model for Where Is My Dog application.
-    Extends Django's AbstractUser with additional fields for profile and moderation. 
-    """ # noqa
+    Extends Django's AbstractUser with additional fields for profile and moderation.
+    """  # noqa
 
     email = models.EmailField(
         max_length=255,
         unique=True,
         blank=False,
-        help_text="Email address - used for notifications and verification"
+        help_text="Email address - used for notifications and verification",
     )
 
     phone = models.CharField(
         max_length=20,
         blank=True,
         null=True,
-        help_text="User phone number for contact"
+        help_text="User phone number for contact",
     )
 
     # Profile photo stored in Cloudinary
     profile_photo = CloudinaryField(
-        'profile',
+        "profile",
         blank=True,
         null=True,
-        folder='users/profiles',
-        help_text="User profile photo"
+        folder="users/profiles",
+        help_text="User profile photo",
     )
 
     # Email verification status
     email_verified = models.BooleanField(
-        default=False,
-        help_text="Whether the user's email has been verified"
+        default=False, help_text="Whether the user's email has been verified"
     )
 
     # User roles and moderation
     is_moderator = models.BooleanField(
-        default=False,
-        help_text="Designates whether user can moderate content"
+        default=False, help_text="Designates whether user can moderate content"
     )
 
     is_banned = models.BooleanField(
         default=False,
-        help_text="Designates whether user is banned from the platform"
+        help_text="Designates whether user is banned from the platform",
     )
 
     # Timestamps
@@ -57,9 +55,9 @@ class User(AbstractUser):
     # Note: is_active, is_staff are already provided by AbstractUser
 
     class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'User'
-        verbose_name_plural = 'Users'
+        ordering = ["-created_at"]
+        verbose_name = "User"
+        verbose_name_plural = "Users"
 
     def __str__(self):
         return self.username

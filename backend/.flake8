@@ -1,8 +1,15 @@
 [flake8]
-exclude = 
+max-line-length = 79
+exclude =
+	.venv,
+	.venv/*,
+	venv,
+	venv/*,
+	staticfiles,
 	migrations,
 	__pycache__,
 	manage.py,
-	settings.py,
-	venv,
-	venv/*
+	settings.py
+per-file-ignores =
+	*/schemas.py: E501
+	config/asgi.py: E402

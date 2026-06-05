@@ -22,30 +22,32 @@ class DuplicateDetector:
             QuerySet: Matching listings ordered by distance
         """
 
-        point_data = listing_data['point']
+        point_data = listing_data["point"]
         lng = point_data.x
         lat = point_data.y
         user_location = Point(lng, lat, srid=4326)
 
         # Filter by location, status and type
-        filtered = Listing.objects.filter(
-            status='active',
-            type=listing_type,
-            locations__is_primary=True,
-            locations__point__distance_lte=(
-                user_location,
-                D(km=self.radius_km)
+        filtered = (
+            Listing.objects.filter(
+                status="active",
+                type=listing_type,
+                locations__is_primary=True,
+                locations__point__distance_lte=(
+                    user_location,
+                    D(km=self.radius_km),
+                ),
             )
-        ).annotate(
-            distance=Distance('locations__point', user_location)
-        ).order_by('distance')
+            .annotate(distance=Distance("locations__point", user_location))
+            .order_by("distance")
+        )
 
         # Filter by collar
-        has_collar = listing_data['has_collar']
+        has_collar = listing_data["has_collar"]
         if has_collar:
             filtered = filtered.filter(
                 has_collar=has_collar,
-                collar_color=listing_data['collar_color']
+                collar_color=listing_data["collar_color"],
             )
         else:
             filtered = filtered.filter(
@@ -54,8 +56,8 @@ class DuplicateDetector:
 
         # Filter by breed and size
         filtered = filtered.filter(
-            breed=listing_data['breed'],
-            size=listing_data['size'],
+            breed=listing_data["breed"],
+            size=listing_data["size"],
         )
 
         return filtered

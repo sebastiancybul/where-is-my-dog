@@ -13,7 +13,7 @@ from .serializers import (
     SimilarListingSerializer,
 )
 
-listing_viewset_schema = extend_schema(tags=['Listings'])
+listing_viewset_schema = extend_schema(tags=["Listings"])
 
 mark_found_schema = extend_schema(
     summary="Mark listing as found/returned",
@@ -28,12 +28,14 @@ mark_found_schema = extend_schema(
             description="Not the owner of this listing",
             examples=[
                 OpenApiExample(
-                    'Forbidden',
-                    value={'detail': 'You do not have permission to perform this action.'}
+                    "Forbidden",
+                    value={
+                        "detail": "You do not have permission to perform this action."
+                    },
                 )
-            ]
-        )
-    }
+            ],
+        ),
+    },
 )
 
 nearby_schema = extend_schema(
@@ -44,36 +46,36 @@ nearby_schema = extend_schema(
     ),
     parameters=[
         OpenApiParameter(
-            name='latitude',
+            name="latitude",
             type=float,
             location=OpenApiParameter.QUERY,
             required=True,
-            description='Latitude coordinate (e.g., 51.2465 for Lublin)',
-            examples=[OpenApiExample('Lublin', value=51.2465)]
+            description="Latitude coordinate (e.g., 51.2465 for Lublin)",
+            examples=[OpenApiExample("Lublin", value=51.2465)],
         ),
         OpenApiParameter(
-            name='longitude',
+            name="longitude",
             type=float,
             location=OpenApiParameter.QUERY,
             required=True,
-            description='Longitude coordinate (e.g., 22.5684 for Lublin)',
-            examples=[OpenApiExample('Lublin', value=22.5684)]
+            description="Longitude coordinate (e.g., 22.5684 for Lublin)",
+            examples=[OpenApiExample("Lublin", value=22.5684)],
         ),
         OpenApiParameter(
-            name='radius_km',
+            name="radius_km",
             type=float,
             location=OpenApiParameter.QUERY,
             required=False,
-            description='Search radius in kilometers (default: 5, max: 10)',
-            examples=[OpenApiExample('Default', value=5)]
+            description="Search radius in kilometers (default: 5, max: 10)",
+            examples=[OpenApiExample("Default", value=5)],
         ),
         OpenApiParameter(
-            name='type',
+            name="type",
             type=str,
             location=OpenApiParameter.QUERY,
             required=False,
-            description='Filter by listing type',
-            enum=['lost', 'found']
+            description="Filter by listing type",
+            enum=["lost", "found"],
         ),
     ],
     responses={
@@ -82,16 +84,16 @@ nearby_schema = extend_schema(
             description="Invalid parameters",
             examples=[
                 OpenApiExample(
-                    'Missing coordinates',
-                    value={'error': 'latitude and longitude are required'}
+                    "Missing coordinates",
+                    value={"error": "latitude and longitude are required"},
                 ),
                 OpenApiExample(
-                    'Invalid format',
-                    value={'error': 'Invalid coordinates or radius'}
-                )
-            ]
-        )
-    }
+                    "Invalid format",
+                    value={"error": "Invalid coordinates or radius"},
+                ),
+            ],
+        ),
+    },
 )
 
 upload_photo_schema = extend_schema(
@@ -101,21 +103,21 @@ upload_photo_schema = extend_schema(
         "and a thumbnail will be automatically generated. Maximum 2 photos per listing."
     ),
     request={
-        'multipart/form-data': {
-            'type': 'object',
-            'properties': {
-                'photo': {
-                    'type': 'string',
-                    'format': 'binary',
-                    'description': 'Photo file (JPEG, PNG, WebP, max 5MB)'
+        "multipart/form-data": {
+            "type": "object",
+            "properties": {
+                "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Photo file (JPEG, PNG, WebP, max 5MB)",
                 },
-                'order_index': {
-                    'type': 'integer',
-                    'default': 0,
-                    'description': 'Order of photo display (0 = primary)'
-                }
+                "order_index": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Order of photo display (0 = primary)",
+                },
             },
-            'required': ['photo']
+            "required": ["photo"],
         }
     },
     responses={
@@ -124,45 +126,55 @@ upload_photo_schema = extend_schema(
             description="Photo uploaded successfully",
             examples=[
                 OpenApiExample(
-                    'Success',
+                    "Success",
                     value={
-                        'id': 1,
-                        'cloudinary_url': 'https://res.cloudinary.com/.../dog.jpg',
-                        'thumbnail_url': 'https://res.cloudinary.com/.../w_300,h_300/dog.jpg',
-                        'order_index': 0,
-                        'uploaded_at': '2024-12-20T10:30:00Z'
-                    }
+                        "id": 1,
+                        "cloudinary_url": "https://res.cloudinary.com/.../dog.jpg",
+                        "thumbnail_url": "https://res.cloudinary.com/.../w_300,h_300/dog.jpg",
+                        "order_index": 0,
+                        "uploaded_at": "2024-12-20T10:30:00Z",
+                    },
                 )
-            ]
+            ],
         ),
         400: OpenApiResponse(
             description="Validation error",
             examples=[
                 OpenApiExample(
-                    'Max photos reached',
-                    value={'error': 'A listing can have a maximum of 2 photos.'}
+                    "Max photos reached",
+                    value={
+                        "error": "A listing can have a maximum of 2 photos."
+                    },
                 ),
                 OpenApiExample(
-                    'File too large',
-                    value={'photo': ['File size too large. Maximum size is 5MB.']}
+                    "File too large",
+                    value={
+                        "photo": ["File size too large. Maximum size is 5MB."]
+                    },
                 ),
                 OpenApiExample(
-                    'Invalid file type',
-                    value={'photo': ['Invalid file type. Allowed types: JPEG, PNG, WebP.']}
-                )
-            ]
+                    "Invalid file type",
+                    value={
+                        "photo": [
+                            "Invalid file type. Allowed types: JPEG, PNG, WebP."
+                        ]
+                    },
+                ),
+            ],
         ),
         403: OpenApiResponse(
             description="Not the owner of this listing",
             examples=[
                 OpenApiExample(
-                    'Forbidden',
-                    value={'detail': 'You do not have permission to perform this action.'}
+                    "Forbidden",
+                    value={
+                        "detail": "You do not have permission to perform this action."
+                    },
                 )
-            ]
+            ],
         ),
-        404: OpenApiResponse(description="Listing not found")
-    }
+        404: OpenApiResponse(description="Listing not found"),
+    },
 )
 
 delete_photo_schema = extend_schema(
@@ -178,43 +190,47 @@ delete_photo_schema = extend_schema(
             description="Photo deleted successfully",
             examples=[
                 OpenApiExample(
-                    'Success',
+                    "Success",
                     value={
-                        'id': 5,
-                        'message': 'Photo deleted successfully',
-                        'deleted_at': '2025-12-20T22:30:00Z'
-                    }
+                        "id": 5,
+                        "message": "Photo deleted successfully",
+                        "deleted_at": "2025-12-20T22:30:00Z",
+                    },
                 )
-            ]
+            ],
         ),
         403: OpenApiResponse(
             description="Not the owner of this listing",
             examples=[
                 OpenApiExample(
-                    'Forbidden',
-                    value={'detail': 'You do not have permission to perform this action.'}
+                    "Forbidden",
+                    value={
+                        "detail": "You do not have permission to perform this action."
+                    },
                 )
-            ]
+            ],
         ),
         404: OpenApiResponse(
             description="Photo not found in this listing",
             examples=[
                 OpenApiExample(
-                    'Not Found',
-                    value={'error': 'Photo not found in this listing'}
+                    "Not Found",
+                    value={"error": "Photo not found in this listing"},
                 )
-            ]
+            ],
         ),
         500: OpenApiResponse(
             description="Server error - failed to delete photo from Cloudinary",
             examples=[
                 OpenApiExample(
-                    'Server Error',
-                    value={'error': 'Failed to delete photo: Connection timeout'}
+                    "Server Error",
+                    value={
+                        "error": "Failed to delete photo: Connection timeout"
+                    },
                 )
-            ]
-        )
-    }
+            ],
+        ),
+    },
 )
 
 add_location_schema = extend_schema(
@@ -228,8 +244,8 @@ add_location_schema = extend_schema(
         201: LocationSerializer,
         400: OpenApiResponse(description="Validation error"),
         401: OpenApiResponse(description="Authentication required"),
-        404: OpenApiResponse(description="Listing not found")
-    }
+        404: OpenApiResponse(description="Listing not found"),
+    },
 )
 
 delete_location_schema = extend_schema(
@@ -243,34 +259,36 @@ delete_location_schema = extend_schema(
             description="Location deleted successfully",
             examples=[
                 OpenApiExample(
-                    'Success',
+                    "Success",
                     value={
-                        'id': 3,
-                        'message': 'Location deleted successfully',
-                        'deleted_at': '2025-12-20T22:30:00Z'
-                    }
+                        "id": 3,
+                        "message": "Location deleted successfully",
+                        "deleted_at": "2025-12-20T22:30:00Z",
+                    },
                 )
-            ]
+            ],
         ),
         403: OpenApiResponse(
             description="Not the owner of this listing or location",
             examples=[
                 OpenApiExample(
-                    'Forbidden',
-                    value={'detail': 'You do not have permission to perform this action.'}
+                    "Forbidden",
+                    value={
+                        "detail": "You do not have permission to perform this action."
+                    },
                 )
-            ]
+            ],
         ),
         404: OpenApiResponse(
             description="Location not found in this listing",
             examples=[
                 OpenApiExample(
-                    'Not Found',
-                    value={'error': 'Location not found in this listing'}
+                    "Not Found",
+                    value={"error": "Location not found in this listing"},
                 )
-            ]
+            ],
         ),
-    }
+    },
 )
 
 check_similar_schema = extend_schema(
@@ -285,5 +303,5 @@ check_similar_schema = extend_schema(
     responses={
         200: ListingSerializer(many=True),
         400: OpenApiResponse(description="Validation error"),
-    }
+    },
 )

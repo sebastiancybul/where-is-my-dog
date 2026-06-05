@@ -1,6 +1,7 @@
 """
 Tests for the listings API
 """
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -10,62 +11,57 @@ from django.contrib.gis.geos import Point
 
 from listings.models import Listing, Location
 
-
-LISTINGS_URL = reverse('listing-list')
+LISTINGS_URL = reverse("listing-list")
 
 
 def nearby_url():
     """Generate URL for nearby listings endpoint"""
-    return reverse('listing-nearby')
+    return reverse("listing-nearby")
 
 
 def check_similar_url():
     """Generate URL for check-similar endpoint"""
-    return reverse('listing-check-similar')
+    return reverse("listing-check-similar")
 
 
 def detail_url(listing_id):
     """Generate URL for listing detail"""
-    return reverse('listing-detail', args=[listing_id])
+    return reverse("listing-detail", args=[listing_id])
 
 
 def mark_found_url(listing_id):
     """Generate URL for mark_found action"""
-    return reverse('listing-mark-found', args=[listing_id])
+    return reverse("listing-mark-found", args=[listing_id])
 
 
 def upload_photo_url(listing_id):
     """Generate URL for upload_photo action"""
-    return reverse('listing-upload-photo', args=[listing_id])
+    return reverse("listing-upload-photo", args=[listing_id])
 
 
 def delete_photo_url(listing_id, photo_id):
     """Generate URL for delete_photo action"""
-    return reverse('listing-delete-photo', args=[listing_id, photo_id])
+    return reverse("listing-delete-photo", args=[listing_id, photo_id])
 
 
 def add_location_url(listing_id):
     """Generate URL for add_location action"""
-    return reverse('listing-add-location', args=[listing_id])
+    return reverse("listing-add-location", args=[listing_id])
 
 
 def delete_location_url(listing_id, location_id):
     """Generate URL for delete_location action"""
-    return reverse('listing-delete-location', args=[listing_id, location_id])
+    return reverse("listing-delete-location", args=[listing_id, location_id])
 
 
-USERNAME = 'janek123'
-EMAIL = 'test@example.com'
-PASSWORD = 'testpass123'
+USERNAME = "janek123"
+EMAIL = "test@example.com"
+PASSWORD = "testpass123"
 
 
 def create_user(**params):
     """Create and return a new user"""
-    defaults = {
-        'username': USERNAME,
-        'email': EMAIL,
-        'password': PASSWORD
-    }
+    defaults = {"username": USERNAME, "email": EMAIL, "password": PASSWORD}
 
     defaults.update(params)
     return get_user_model().objects.create_user(**defaults)
@@ -77,16 +73,16 @@ def create_listing(user, point=None, **params):
     Returns created listing object.
     """
     defaults = {
-        'type': Listing.TYPE_FOUND,
-        'title': 'Found Golden Retriever',
-        'description': 'Found near park, very friendly dog',
-        'breed': 'Golden Retriever',
-        'size': Listing.SIZE_LARGE,
-        'color': 'Golden',
-        'gender': Listing.GENDER_UNKNOWN,
-        'has_collar': True,
-        'collar_color': 'Red',
-        'search_radius_km': 5,
+        "type": Listing.TYPE_FOUND,
+        "title": "Found Golden Retriever",
+        "description": "Found near park, very friendly dog",
+        "breed": "Golden Retriever",
+        "size": Listing.SIZE_LARGE,
+        "color": "Golden",
+        "gender": Listing.GENDER_UNKNOWN,
+        "has_collar": True,
+        "collar_color": "Red",
+        "search_radius_km": 5,
     }
     defaults.update(params)
 
@@ -96,10 +92,7 @@ def create_listing(user, point=None, **params):
     if point is None:
         point = Point(22.5684, 51.2465, srid=4326)
     Location.objects.create(
-        listing=listing,
-        point=point,
-        added_by_user=user,
-        is_primary=True
+        listing=listing, point=point, added_by_user=user, is_primary=True
     )
 
     return listing
@@ -115,30 +108,33 @@ class PublicListingsApiTests(APITestCase):
 
     def test_list_listings_success(self):
         """Test that unauthenticated users can view listings list"""
-        create_listing(self.user, title='Found Beagle')
+        create_listing(self.user, title="Found Beagle")
 
         res = self.client.get(LISTINGS_URL)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data['results']), 2)
+        self.assertEqual(len(res.data["results"]), 2)
 
     def test_filter_listings_multi_select(self):
         """Test filtering listings with multiple values (comma-separated)."""
-        create_listing(self.user,
-                       title='Small male', size='small', gender='male')
-        create_listing(self.user,
-                       title='Medium female', size='medium', gender='female')
-        create_listing(self.user,
-                       title='Large male', size='large', gender='male')
+        create_listing(
+            self.user, title="Small male", size="small", gender="male"
+        )
+        create_listing(
+            self.user, title="Medium female", size="medium", gender="female"
+        )
+        create_listing(
+            self.user, title="Large male", size="large", gender="male"
+        )
 
         # Multi-select size: small,medium → should return 2
-        res = self.client.get(LISTINGS_URL, {'size': 'small,medium'})
+        res = self.client.get(LISTINGS_URL, {"size": "small,medium"})
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        titles = [r['title'] for r in res.data['results']]
-        self.assertIn('Small male', titles)
-        self.assertIn('Medium female', titles)
-        self.assertNotIn('Large male', titles)
+        titles = [r["title"] for r in res.data["results"]]
+        self.assertIn("Small male", titles)
+        self.assertIn("Medium female", titles)
+        self.assertNotIn("Large male", titles)
 
     def test_retrieve_listing_detail_success(self):
         """Test that unauthenticated users can view listing details"""
@@ -146,36 +142,38 @@ class PublicListingsApiTests(APITestCase):
         res = self.client.get(url)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data['id'], self.listing.id)
-        self.assertEqual(res.data['title'], self.listing.title)
-        self.assertIn('primary_location', res.data)
+        self.assertEqual(res.data["id"], self.listing.id)
+        self.assertEqual(res.data["title"], self.listing.title)
+        self.assertIn("primary_location", res.data)
 
     def test_nearby_listings_success(self):
         """Test finding nearby listings without authentication"""
         # Create additional listing in different location
         create_listing(
             self.user,
-            point=Point(22.5487, 51.2371),  # Nadbystrzycka 1,7km km from the 22.5684, 51.2465 # noqa
-            title='Another dog'
+            point=Point(
+                22.5487, 51.2371
+            ),  # Nadbystrzycka 1,7km km from the 22.5684, 51.2465 # noqa
+            title="Another dog",
         )
 
         # Search near Lublin center
         url = nearby_url()
-        res = self.client.get(url, {
-            'latitude': 51.2465,
-            'longitude': 22.5684,
-            'radius_km': 1
-        })
+        res = self.client.get(
+            url, {"latitude": 51.2465, "longitude": 22.5684, "radius_km": 1}
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(res.data), 1)  # self.listing 22.5684, 51.2465 <1km # noqa
+        self.assertGreaterEqual(
+            len(res.data), 1
+        )  # self.listing 22.5684, 51.2465 <1km # noqa
 
     def test_create_listing_fails_unauthenticated(self):
         """Test that creating listing requires authentication"""
         payload = {
-            'type': 'found',
-            'title': 'Found Dog',
-            'description': 'Test',
+            "type": "found",
+            "title": "Found Dog",
+            "description": "Test",
         }
         res = self.client.post(LISTINGS_URL, payload)
 
@@ -194,64 +192,59 @@ class PrivateListingsApiTests(APITestCase):
 
     def setUp(self):
         """Create test users and authenticate"""
-        self.user = create_user(
-            username='user1',
-            email='user1@example.com'
-        )
+        self.user = create_user(username="user1", email="user1@example.com")
         self.other_user = create_user(
-            username='user2',
-            email='user2@example.com'
+            username="user2", email="user2@example.com"
         )
         self.client.force_authenticate(user=self.user)
 
         # Create listings for different users
-        self.own_listing = create_listing(self.user, title='My Dog')
+        self.own_listing = create_listing(self.user, title="My Dog")
         self.other_listing = create_listing(
-            self.other_user,
-            title='Other User Dog'
+            self.other_user, title="Other User Dog"
         )
 
     def test_create_listing_success(self):
         """Test creating a new listing as authenticated user"""
         payload = {
-            'type': 'lost',
-            'title': 'Lost Beagle',
-            'description': 'Lost my beagle near park',
-            'breed': 'Beagle',
-            'size': 'medium',
-            'color': 'Brown',
-            'has_collar': True,
-            'collar_color': 'Blue',
-            'search_radius_km': 5,
+            "type": "lost",
+            "title": "Lost Beagle",
+            "description": "Lost my beagle near park",
+            "breed": "Beagle",
+            "size": "medium",
+            "color": "Brown",
+            "has_collar": True,
+            "collar_color": "Blue",
+            "search_radius_km": 5,
         }
         res = self.client.post(LISTINGS_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(res.data['title'], payload['title'])
+        self.assertEqual(res.data["title"], payload["title"])
 
         # Verify listing was created with correct user
-        listing = Listing.objects.get(id=res.data['id'])
+        listing = Listing.objects.get(id=res.data["id"])
         self.assertEqual(listing.user, self.user)
 
     def test_update_own_listing_success(self):
         """Test updating own listing"""
         url = detail_url(self.own_listing.id)
-        payload = {'title': 'Updated Title'}
+        payload = {"title": "Updated Title"}
         res = self.client.patch(url, payload)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.own_listing.refresh_from_db()
-        self.assertEqual(self.own_listing.title, payload['title'])
+        self.assertEqual(self.own_listing.title, payload["title"])
 
     def test_update_other_user_listing_fails(self):
         """Test updating another user's listing fails"""
         url = detail_url(self.other_listing.id)
-        payload = {'title': 'Hacked Title'}
+        payload = {"title": "Hacked Title"}
         res = self.client.patch(url, payload)
 
         self.assertIn(
             res.status_code,
-            [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
+            [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND],
         )
 
     def test_delete_own_listing_success(self):
@@ -271,7 +264,7 @@ class PrivateListingsApiTests(APITestCase):
 
         self.assertIn(
             res.status_code,
-            [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
+            [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND],
         )
 
         self.assertTrue(
@@ -281,9 +274,7 @@ class PrivateListingsApiTests(APITestCase):
     def test_mark_found_own_listing_success(self):
         """Test marking own listing as found/returned"""
         found_listing = create_listing(
-            self.user,
-            type=Listing.TYPE_FOUND,
-            title='Found Dog'
+            self.user, type=Listing.TYPE_FOUND, title="Found Dog"
         )
 
         url = mark_found_url(found_listing.id)
@@ -299,7 +290,7 @@ class PrivateListingsApiTests(APITestCase):
         res = self.client.post(url)
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn('detail', res.data)
+        self.assertIn("detail", res.data)
 
 
 class LocationTests(APITestCase):
@@ -316,16 +307,16 @@ class LocationTests(APITestCase):
         url = add_location_url(self.listing.id)
 
         payload = {
-            'point': {
-                'type': 'Point',
-                'coordinates': [22.5700, 51.2500]  # [lng, lat]
+            "point": {
+                "type": "Point",
+                "coordinates": [22.5700, 51.2500],  # [lng, lat]
             },
-            'address': 'New location in Lublin',
-            'location_type': 'exact',
-            'notes': 'Dog spotted here'
+            "address": "New location in Lublin",
+            "location_type": "exact",
+            "notes": "Dog spotted here",
         }
 
-        res = self.client.post(url, payload, format='json')
+        res = self.client.post(url, payload, format="json")
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.listing.locations.count(), 2)
@@ -335,18 +326,15 @@ class LocationTests(APITestCase):
         url = add_location_url(self.listing.id)
 
         payload = {
-            'point': {
-                'type': 'Point',
-                'coordinates': [22.5700, 51.2500]
-            }
+            "point": {"type": "Point", "coordinates": [22.5700, 51.2500]}
         }
 
-        res = self.client.post(url, payload, format='json')
+        res = self.client.post(url, payload, format="json")
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         # New location should be primary
-        new_location = Location.objects.get(id=res.data['id'])
+        new_location = Location.objects.get(id=res.data["id"])
         self.assertTrue(new_location.is_primary)
 
         # Old location should no longer be primary
@@ -367,12 +355,12 @@ class LocationTests(APITestCase):
 
     def test_delete_location_as_location_adder_success(self):
         """Test that user who added the location can delete it"""
-        other_user = create_user(username='other', email='other@example.com')
+        other_user = create_user(username="other", email="other@example.com")
         location = Location.objects.create(
             listing=self.listing,
             point=Point(22.5700, 51.2500),
             added_by_user=other_user,
-            is_primary=False
+            is_primary=False,
         )
 
         self.client.force_authenticate(user=other_user)
@@ -384,7 +372,7 @@ class LocationTests(APITestCase):
 
     def test_delete_location_unauthorized_user_fails(self):
         """Test that random user cannot delete a location"""
-        other_user = create_user(username='other', email='other@example.com')
+        other_user = create_user(username="other", email="other@example.com")
         self.client.force_authenticate(user=other_user)
 
         location = self.listing.locations.first()
@@ -406,10 +394,10 @@ class DuplicateDetectionTests(APITestCase):
         self.existing_found = create_listing(
             self.user,
             type=Listing.TYPE_FOUND,
-            breed='Labrador',
+            breed="Labrador",
             size=Listing.SIZE_LARGE,
             has_collar=True,
-            collar_color='Red'
+            collar_color="Red",
         )
 
     def test_check_similar_finds_exact_match(self):
@@ -417,40 +405,34 @@ class DuplicateDetectionTests(APITestCase):
         url = check_similar_url()
 
         payload = {
-            'search_type': 'found',
-            'point': {
-                'type': 'Point',
-                'coordinates': [22.5684, 51.2465]
-            },
-            'breed': 'Labrador',
-            'size': 'large',
-            'has_collar': True,
-            'collar_color': 'Red'
+            "search_type": "found",
+            "point": {"type": "Point", "coordinates": [22.5684, 51.2465]},
+            "breed": "Labrador",
+            "size": "large",
+            "has_collar": True,
+            "collar_color": "Red",
         }
 
-        res = self.client.post(url, payload, format='json')
+        res = self.client.post(url, payload, format="json")
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]['id'], self.existing_found.id)
+        self.assertEqual(res.data[0]["id"], self.existing_found.id)
 
     def test_check_similar_no_match_different_breed(self):
         """Test no match when breed is different"""
         url = check_similar_url()
 
         payload = {
-            'search_type': 'found',
-            'point': {
-                'type': 'Point',
-                'coordinates': [22.5684, 51.2465]
-            },
-            'breed': 'Beagle',
-            'size': 'large',
-            'has_collar': True,
-            'collar_color': 'Red'
+            "search_type": "found",
+            "point": {"type": "Point", "coordinates": [22.5684, 51.2465]},
+            "breed": "Beagle",
+            "size": "large",
+            "has_collar": True,
+            "collar_color": "Red",
         }
 
-        res = self.client.post(url, payload, format='json')
+        res = self.client.post(url, payload, format="json")
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 0)
