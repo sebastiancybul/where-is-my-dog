@@ -6,6 +6,8 @@ from users.serializers import UserPublicSerializer
 
 from rest_framework_gis.fields import GeometryField
 
+from chats.models import Conversation
+
 
 class ListingListSerializer(serializers.ModelSerializer):
     """
@@ -64,6 +66,8 @@ class ListingSerializer(serializers.ModelSerializer):
 
     primary_location = serializers.SerializerMethodField()
     photo_count = serializers.SerializerMethodField()
+    public_conversation_id = serializers.SerializerMethodField()
+    public_conversation_is_closed = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -90,6 +94,8 @@ class ListingSerializer(serializers.ModelSerializer):
             "photo_count",
             "locations",
             "primary_location",
+            "public_conversation_id",
+            "public_conversation_is_closed",
             "created_at",
             "updated_at",
         )
@@ -125,6 +131,17 @@ class ListingSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def get_public_conversation(self, obj):
+        return obj.conversations.filter(type=Conversation.TYPE_PUBLIC).first()
+
+    def get_public_conversation_id(self, obj):
+        conv = self.get_public_conversation(obj)
+        return conv.pk if conv else None
+
+    def get_public_conversation_is_closed(self, obj):
+        conv = self.get_public_conversation(obj)
+        return conv.is_closed if conv else None
+
 
 class SimilarListingSerializer(serializers.Serializer):
     """
@@ -156,8 +173,7 @@ class SimilarListingSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {
                     "collar_color": (
-                        "Collar color is required when "
-                        "has_collar=True"
+                        "Collar color is required when " "has_collar=True"
                     )
                 }
             )

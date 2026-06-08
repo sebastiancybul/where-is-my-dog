@@ -8,6 +8,7 @@ from .message import MessageSerializer
 class ConversationSerializer(serializers.ModelSerializer):
     last_message = serializers.SerializerMethodField()
     listing_title = serializers.SerializerMethodField()
+    listing_photo = serializers.SerializerMethodField()
     other_participant = serializers.SerializerMethodField()
 
     class Meta:
@@ -17,6 +18,7 @@ class ConversationSerializer(serializers.ModelSerializer):
             "type",
             "listing_id",
             "listing_title",
+            "listing_photo",
             "is_closed",
             "last_message",
             "other_participant",
@@ -31,6 +33,12 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     def get_listing_title(self, obj):
         return obj.listing.title if obj.listing else None
+
+    def get_listing_photo(self, obj):
+        if not obj.listing:
+            return None
+        photo = obj.listing.photos.order_by("order_index").first()
+        return photo.thumbnail_url if photo else None
 
     def get_other_participant(self, obj):
         request = self.context.get("request")
