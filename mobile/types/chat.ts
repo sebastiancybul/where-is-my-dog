@@ -27,6 +27,7 @@ export interface Conversation {
   type: 'public' | 'private'
   listing_id: number | null
   listing_title: string | null
+  listing_photo: string | null
   is_closed: boolean
   last_message: Message | null
   other_participant: OtherParticipant | null

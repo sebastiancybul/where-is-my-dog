@@ -18,6 +18,7 @@ const Details = () => {
   const [isMarkingAsResolved, setIsMarkingAsResolved] = useState<boolean>(false);
   const [markResolvedSuccess, setMarkResolvedSuccess] = useState<boolean>(false);
   const [isStartingChat, setIsStartingChat] = useState(false)
+  const [isJoiningGroup, setIsJoiningGroup] = useState(false)
 
 	const { authState } = useAuth();
   const { listing: listingData, refetch } = useListing()
@@ -100,6 +101,27 @@ const Details = () => {
       console.log(e)
     } finally {
       setIsStartingChat(false)
+    }
+  }
+
+  const handleGroupChat = async () => {
+    const convId = listingData?.public_conversation_id
+    if (!convId) return
+    try {
+      setIsJoiningGroup(true)
+      await axios.post(`${API_URL}/api/chats/conversations/${convId}/join/`)
+      router.push({
+        pathname: '/chat/[id]',
+        params: {
+          id: String(convId),
+          listing_title: listingData?.title ?? '',
+          is_group: 'true',
+        },
+      })
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setIsJoiningGroup(false)
     }
   }
 
@@ -291,26 +313,55 @@ const Details = () => {
 			</ScrollView>
 
 			{!isAuthor && (
-        <Pressable
-          onPress={handleMessage}
-          disabled={isStartingChat}
-          className="absolute bottom-7 left-6 right-6 flex-row p-4 rounded-3xl items-center justify-center bg-slate-800 active:opacity-80"
-        >
-          {isStartingChat ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <>
-              <Ionicons name="chatbubbles" color="white" size={24} />
-              <Text className="text-white text-2xl font-bold ml-2">Message</Text>
-            </>
+        <View className="absolute bottom-7 left-6 right-6 flex-row gap-3">
+          <Pressable
+            onPress={handleMessage}
+            disabled={isStartingChat}
+            className="flex-1 flex-row p-4 rounded-3xl items-center justify-center bg-slate-800 active:opacity-80"
+          >
+            {isStartingChat ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <>
+                <Ionicons name="chatbubbles" color="white" size={24} />
+                <Text className="text-white text-xl font-bold ml-2">Message</Text>
+              </>
+            )}
+          </Pressable>
+
+          {!!listingData?.public_conversation_id && !listingData?.public_conversation_is_closed && (
+            <Pressable
+              onPress={handleGroupChat}
+              disabled={isJoiningGroup}
+              className="flex-1 flex-row p-4 rounded-3xl items-center justify-center bg-blue-600 active:opacity-80"
+            >
+              {isJoiningGroup ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Ionicons name="people" color="white" size={24} />
+                  <Text className="text-white text-xl font-bold ml-2">Group Chat</Text>
+                </>
+              )}
+            </Pressable>
           )}
-        </Pressable>
+        </View>
       )}
 
       {isAuthor && (
 				<View className="absolute bottom-10 left-6 right-6 flex justify-between gap-3">
           {!!isMenuOpen &&
             <View className="bg-white rounded-2xl shadow-lg border border-gray-100 mb-3 overflow-hidden">
+              {!!listingData?.public_conversation_id && !listingData?.public_conversation_is_closed && (
+                <Pressable
+                  onPress={handleGroupChat}
+                  disabled={isJoiningGroup}
+                  className="flex-row items-center gap-3 px-5 py-4 active:bg-blue-50"
+                >
+                  <Ionicons name="people" size={20} color="#2563eb" />
+                  <Text className="text-blue-600 text-base font-semibold">Group Chat</Text>
+                </Pressable>
+              )}
               <Pressable
                 onPress={handleDelete}
                 className="flex-row items-center gap-3 px-5 py-4 active:bg-red-50"

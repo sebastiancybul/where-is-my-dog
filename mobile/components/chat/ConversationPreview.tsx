@@ -10,6 +10,7 @@ interface Props {
 }
 
 const ConversationPreview = ({ conversation, currentUserId, onPress }: Props) => {
+    const isPublic = conversation.type === 'public'
     const other = conversation.other_participant
     const lastMsg = conversation.last_message
     const isOwnLast = lastMsg?.sender_id === currentUserId
@@ -24,7 +25,13 @@ const ConversationPreview = ({ conversation, currentUserId, onPress }: Props) =>
       className="flex-row items-center px-4 py-3 border-b border-gray-50 active:bg-gray-50"
     >
       <View className="w-12 h-12 rounded-full bg-indigo-100 items-center justify-center mr-3">
-        {other?.profile_photo ? (
+        {isPublic ? (
+          conversation.listing_photo ? (
+            <Image source={{ uri: conversation.listing_photo }} className="w-12 h-12 rounded-full" />
+          ) : (
+            <Ionicons name="people" size={24} color="#818cf8" />
+          )
+        ) : other?.profile_photo ? (
           <Image source={{ uri: other.profile_photo }} className="w-12 h-12 rounded-full" />
         ) : (
           <Text className="text-indigo-400 font-bold text-sm uppercase">
@@ -40,8 +47,8 @@ const ConversationPreview = ({ conversation, currentUserId, onPress }: Props) =>
           )}
         </Text>
         <View className="flex-row justify-between">
-          <Text className={`text-lg ${isUnread ? 'font-bold' : 'font-normal'} text-slate-800`}>
-            {other?.username ?? 'Unknown'}
+          <Text className={`text-lg ${isUnread ? 'font-bold' : 'font-normal'} text-slate-800`} numberOfLines={1}>
+            {isPublic ? 'Group chat' : (other?.username ?? 'Unknown')}
           </Text>
           {lastMsg && (
             <Text className="text-xs text-gray-400">

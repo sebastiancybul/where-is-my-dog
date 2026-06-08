@@ -59,6 +59,8 @@ export interface ListingItem {
   photo_count: number;
   locations: ListingLocation[];
   primary_location: ListingLocation | null;
+  public_conversation_id: number | null;
+  public_conversation_is_closed: boolean | null;
   created_at: string;
   updated_at: string;
 }

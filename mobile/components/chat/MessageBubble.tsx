@@ -6,6 +6,7 @@ import { Message } from '@/types/chat'
 interface Props {
   message: Message
   isOwn: boolean
+  showSender?: boolean
   onVisible: () => void
   onPhotoPress: (uri: string) => void
 }
@@ -29,7 +30,7 @@ const ChatPhoto = ({ uri, onPress }: { uri: string; onPress: () => void }) => {
   )
 }
 
-const MessageBubble = ({ message, isOwn, onVisible, onPhotoPress }: Props) => {
+const MessageBubble = ({ message, isOwn, showSender, onVisible, onPhotoPress }: Props) => {
   const isSending = message.status === 'sending'
 
   useEffect(() => {
@@ -57,6 +58,10 @@ const MessageBubble = ({ message, isOwn, onVisible, onPhotoPress }: Props) => {
       style={{ opacity: isSending ? 0.6 : 1 }}
       className={`mb-2 max-w-[75%] ${isOwn ? 'self-end' : 'self-start'}`}
     >
+      {showSender && (
+        <Text className="text-xs text-gray-400 mb-0.5 px-1">{message.sender_username}</Text>
+      )}
+
       {message.photos.map((photo) => (
         <ChatPhoto key={photo.id} uri={photo.url} onPress={() => onPhotoPress(photo.url)} />
       ))}

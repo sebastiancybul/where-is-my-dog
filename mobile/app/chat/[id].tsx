@@ -16,11 +16,13 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL
 
 const ConversationScreen = () => {
-  const { id, listing_title, other_username } = useLocalSearchParams<{
+  const { id, listing_title, other_username, is_group } = useLocalSearchParams<{
     id: string
     listing_title: string
     other_username: string
+    is_group: string
   }>();
+  const isGroup = is_group === 'true';
   const { authState } = useAuth();
   const router = useRouter();
 
@@ -184,12 +186,23 @@ const ConversationScreen = () => {
           <Ionicons name="arrow-back" size={24} color="#1e293b" />
         </Pressable>
         <View className="flex-1">
-          {listing_title ? (
-            <Text className="text-lg text-indigo-400 font-medium" numberOfLines={1}>{listing_title}</Text>
-          ) : null}
-          <Text className="text-base font-bold text-slate-800" numberOfLines={1}>
-            {other_username || 'Conversation'}
-          </Text>
+          {isGroup ? (
+            <>
+              <Text className="text-lg font-bold text-slate-800" numberOfLines={1}>
+                {listing_title || 'Group Chat'}
+              </Text>
+              <Text className="text-sm text-indigo-400 font-medium">Group chat</Text>
+            </>
+          ) : (
+            <>
+              {listing_title ? (
+                <Text className="text-lg text-indigo-400 font-medium" numberOfLines={1}>{listing_title}</Text>
+              ) : null}
+              <Text className="text-base font-bold text-slate-800" numberOfLines={1}>
+                {other_username || 'Conversation'}
+              </Text>
+            </>
+          )}
         </View>
       </View>
 
@@ -203,6 +216,7 @@ const ConversationScreen = () => {
           <MessageBubble
             message={item}
             isOwn={item.sender_id === authState.user!.id}
+            showSender={isGroup && item.sender_id !== authState.user!.id}
             onPhotoPress={setZoomUri}
             onVisible={() => {
               if (

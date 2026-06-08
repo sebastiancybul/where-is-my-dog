@@ -121,6 +121,7 @@ const ChatsScreen = () => {
                 id: item.id,
                 listing_title: item.listing_title ?? '',
                 other_username: item.other_participant?.username ?? '',
+                is_group: item.type === 'public' ? 'true' : '',
               },
             })}
           />
