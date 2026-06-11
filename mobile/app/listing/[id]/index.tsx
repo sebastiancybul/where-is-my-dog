@@ -5,6 +5,7 @@ import axios from "axios";
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useListing } from "@/contexts/ListingContext";
+import LocationHistory from "@/components/LocationHistory";
 
 
 const Details = () => {
@@ -277,12 +278,24 @@ const Details = () => {
                         <Text className="tracking-wide">{listingData?.primary_location?.latitude && `Lat: ${parseFloat(listingData?.primary_location?.latitude).toFixed(4)},`}</Text>
                         <Text className="tracking-wide">{listingData?.primary_location?.longitude && `Long: ${parseFloat(listingData?.primary_location?.longitude).toFixed(4)}`}</Text>
                       </View>
-                      <Text className="text-xs tracking-wide text-gray-600 mt-1">Click to view on the map</Text>
+                      <Text className="text-xs tracking-wide text-gray-600 mt-1">Tap to view all reported locations on the map</Text>
                     </View>
                 </View>
               </Pressable>
+
+              {authState.isAuthenticated && listingData?.type === 'found' && listingData?.status === 'active' && (
+                <Pressable
+                  onPress={() => router.push(`/listing/${id}/add-new-location`)}
+                  className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-50 border border-gray-100 active:opacity-80"
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="#1e293b" />
+                  <Text className="font-semibold text-slate-800">Report new location</Text>
+                </Pressable>
+              )}
 						</View>
 					</View>
+
+					<LocationHistory />
 
 					<View className="flex flex-row items-center p-4 bg-white border-t border-gray-100 rounded-2xl">
 						<View className="w-12 h-12 items-center justify-center rounded-full bg-indigo-50">

@@ -11,7 +11,7 @@ export interface LocationPoint {
 
 export interface ListingLocation {
   id: number;
-  added_by_user: number;
+  added_by_user: UserPreview;
   listing: number;
   latitude: string;
   longitude: string;
