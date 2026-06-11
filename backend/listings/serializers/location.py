@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework_gis.fields import GeometryField
+from users.serializers import UserPublicSerializer
 from ..models import Location
 
 
@@ -10,6 +11,7 @@ class LocationSerializer(serializers.ModelSerializer):
     """
 
     point = GeometryField()
+    added_by_user = UserPublicSerializer(read_only=True)
 
     class Meta:
         model = Location

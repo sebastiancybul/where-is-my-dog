@@ -1,7 +1,10 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, filters, status
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from ..permissions import IsOwnerOrReadOnly
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -206,7 +209,12 @@ class ListingViewSet(viewsets.ModelViewSet):
             )
 
     @add_location_schema
-    @action(detail=True, methods=["post"], url_path="location")
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="location",
+        permission_classes=[IsAuthenticated],
+    )
     def add_location(self, request, pk=None):
         listing = self.get_object()
 
@@ -245,7 +253,14 @@ class ListingViewSet(viewsets.ModelViewSet):
             )
 
         location_id_deleted = location.id
+        was_primary = location.is_primary
         location.delete()
+
+        if was_primary:
+            new_primary = listing.locations.order_by("-created_at").first()
+            if new_primary:
+                new_primary.is_primary = True
+                new_primary.save()
 
         return Response(
             {
