@@ -165,12 +165,20 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": env("CLOUDINARY_API_SECRET"),
 }
 
+# Firebase Cloud Messaging (push notifications)
+FIREBASE_CREDENTIALS_FILE = env(
+    "FIREBASE_CREDENTIALS_FILE",
+    default=str(BASE_DIR / "firebase-service-account.json"),
+)
+
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
+
+REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
 
 
 ASGI_APPLICATION = "config.asgi.application"

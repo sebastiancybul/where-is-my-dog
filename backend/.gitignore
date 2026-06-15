@@ -42,3 +42,6 @@ Thumbs.db
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+# Firebase service account
+firebase-service-account.json

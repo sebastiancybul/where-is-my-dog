@@ -35,3 +35,6 @@ daphne>=4.1
 
 # Testing
 fakeredis>=2.0
+
+# Push notifications 
+firebase-admin>=7.4,<8.0
