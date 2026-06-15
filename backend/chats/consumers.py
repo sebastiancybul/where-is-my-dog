@@ -1,10 +1,12 @@
 import json
 
+from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 
 from notifications.notify import notify_user
+from notifications.tasks import send_push_to_user
 
 from .models import (
     Conversation,
@@ -101,6 +103,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 },
             )
 
+            last_message = {
+                "id": message.pk,
+                "body": message.body[:120],
+                "has_photo": False,
+                "sender_id": message.sender_id,
+                "created_at": message.created_at.isoformat(),
+            }
+
+            conversation_title = await self.get_conversation_title()
+            push_title = (
+                f"{self.user.username} · {conversation_title}"
+                if conversation_title
+                else self.user.username
+            )
+
             members = await self.get_conversation_members(self.conversation.pk)
             for member in members:
                 if member.user_id != self.user.pk:
@@ -109,13 +126,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         event_type="new_message",
                         payload={
                             "conversation_id": self.conversation.pk,
-                            "last_message": {
-                                "id": message.pk,
-                                "body": message.body,
-                                "has_photo": False,
-                                "sender_id": message.sender_id,
-                                "created_at": message.created_at.isoformat(),
-                            },
+                            "last_message": last_message,
+                        },
+                    )
+                    await sync_to_async(send_push_to_user.delay)(
+                        user_id=member.user_id,
+                        event_type="new_message",
+                        title=push_title,
+                        body=last_message["body"],
+                        data={
+                            "conversation_id": self.conversation.pk,
+                            "last_message": json.dumps(last_message),
                         },
                     )
 
@@ -229,6 +250,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 conversation_id=conversation_id
             )
         )
+
+    @database_sync_to_async
+    def get_conversation_title(self):
+        listing = self.conversation.listing
+        return listing.title if listing else None
 
     @database_sync_to_async
     def mark_all_messages_read(self):

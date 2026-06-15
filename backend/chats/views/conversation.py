@@ -1,3 +1,5 @@
+import json
+
 import cloudinary.uploader
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -11,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from notifications.notify import notify_user
+from notifications.tasks import send_push_to_user
 from chats.models import (
     Conversation,
     ConversationMembership,
@@ -229,6 +232,21 @@ class ConversationViewSet(viewsets.GenericViewSet):
             },
         )
 
+        listing = conversation.listing
+        push_title = (
+            f"{request.user.username} · {listing.title}"
+            if listing
+            else request.user.username
+        )
+
+        last_message = {
+            "id": message.pk,
+            "body": "",
+            "has_photo": True,
+            "sender_id": message.sender_id,
+            "created_at": message.created_at.isoformat(),
+        }
+
         members = ConversationMembership.objects.filter(
             conversation=conversation
         )
@@ -239,13 +257,17 @@ class ConversationViewSet(viewsets.GenericViewSet):
                     event_type="new_message",
                     payload={
                         "conversation_id": conversation.pk,
-                        "last_message": {
-                            "id": message.pk,
-                            "body": "",
-                            "has_photo": True,
-                            "sender_id": message.sender_id,
-                            "created_at": message.created_at.isoformat(),
-                        },
+                        "last_message": last_message,
+                    },
+                )
+                send_push_to_user.delay(
+                    user_id=member.user_id,
+                    event_type="new_message",
+                    title=push_title,
+                    body="Photo",
+                    data={
+                        "conversation_id": conversation.pk,
+                        "last_message": json.dumps(last_message),
                     },
                 )
 

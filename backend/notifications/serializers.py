@@ -7,3 +7,4 @@ class DeviceTokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeviceToken
         fields = ("token", "platform")
+        extra_kwargs = {"token": {"validators": []}}
