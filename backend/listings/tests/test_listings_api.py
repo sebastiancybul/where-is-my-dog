@@ -2,6 +2,8 @@
 Tests for the listings API
 """
 
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -10,6 +12,7 @@ from rest_framework import status
 from django.contrib.gis.geos import Point
 
 from listings.models import Listing, Location
+from notifications.models import Notification
 
 LISTINGS_URL = reverse("listing-list")
 
@@ -320,6 +323,40 @@ class LocationTests(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.listing.locations.count(), 2)
+
+    @patch("listings.views.listing.dispatch_notification")
+    def test_add_location_by_other_user_notifies_owner(self, mock_dispatch):
+        reporter = create_user(
+            username="reporter", email="reporter@example.com"
+        )
+        self.client.force_authenticate(user=reporter)
+        url = add_location_url(self.listing.id)
+        payload = {
+            "point": {"type": "Point", "coordinates": [22.5700, 51.2500]}
+        }
+
+        res = self.client.post(url, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        mock_dispatch.assert_called_once()
+        kwargs = mock_dispatch.call_args.kwargs
+        self.assertEqual(kwargs["user_id"], self.user.id)
+        self.assertEqual(
+            kwargs["event_type"], Notification.EVENT_LOCATION_REPORTED
+        )
+        self.assertEqual(kwargs["data"]["listing_id"], self.listing.id)
+
+    @patch("listings.views.listing.dispatch_notification")
+    def test_add_location_by_owner_does_not_notify(self, mock_dispatch):
+        url = add_location_url(self.listing.id)
+        payload = {
+            "point": {"type": "Point", "coordinates": [22.5700, 51.2500]}
+        }
+
+        res = self.client.post(url, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        mock_dispatch.assert_not_called()
 
     def test_new_location_becomes_primary(self):
         """Test that newly added location becomes primary"""

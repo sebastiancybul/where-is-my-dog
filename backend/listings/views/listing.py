@@ -41,6 +41,9 @@ from listings.filters import ListingFilter
 from chats.models import Conversation, ConversationMembership
 from chats.serializers import ConversationSerializer
 
+from notifications.dispatch import dispatch_notification
+from notifications.models import Notification
+
 
 @listing_viewset_schema
 class ListingViewSet(viewsets.ModelViewSet):
@@ -222,6 +225,18 @@ class ListingViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         location = serializer.save(added_by_user=request.user, listing=listing)
+
+        if listing.user_id != request.user.id:
+            dispatch_notification(
+                user_id=listing.user_id,
+                event_type=Notification.EVENT_LOCATION_REPORTED,
+                title=listing.title,
+                body=f"{request.user.username} reported a new location",
+                data={
+                    "listing_id": listing.pk,
+                    "location_id": location.pk,
+                },
+            )
 
         return Response(
             LocationSerializer(location).data, status=status.HTTP_201_CREATED

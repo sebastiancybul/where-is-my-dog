@@ -12,6 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from notifications.dispatch import dispatch_notification
+from notifications.models import Notification
 from notifications.notify import notify_user
 from notifications.tasks import send_push_to_user
 from chats.models import (
@@ -118,6 +120,19 @@ class ConversationViewSet(viewsets.GenericViewSet):
         ConversationMembership.objects.create(
             user=other_user, conversation=conversation
         )
+
+        listing = conversation.listing
+        if listing and listing.user_id != request.user.id:
+            dispatch_notification(
+                user_id=listing.user_id,
+                event_type=Notification.EVENT_LISTING_INQUIRY,
+                title=f"{request.user.username} · {listing.title}",
+                body="Someone contacted you about your listing",
+                data={
+                    "conversation_id": conversation.pk,
+                    "listing_id": listing.pk,
+                },
+            )
 
         return Response(
             self.get_serializer(conversation).data,
