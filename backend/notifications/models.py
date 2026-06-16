@@ -44,3 +44,59 @@ class DeviceToken(models.Model):
 
     def __str__(self):
         return f"{self.user} ({self.platform})"
+
+
+class Notification(models.Model):
+    """
+    Persisted in-app notification for non-chat events
+    (e.g. inquiry about your listing, new location reported).
+    Shown in the notification inbox; chat messages are not stored here.
+    """
+
+    EVENT_LISTING_INQUIRY = "listing_inquiry"
+    EVENT_LOCATION_REPORTED = "location_reported"
+    EVENT_LISTING_EXPIRING = "listing_expiring"
+    EVENT_LISTING_EXPIRED = "listing_expired"
+    EVENT_LISTING_RESOLVED = "listing_resolved"
+    EVENT_NEARBY_LISTING = "nearby_listing"
+    EVENT_TYPE_CHOICES = [
+        (EVENT_LISTING_INQUIRY, "Listing inquiry"),
+        (EVENT_LOCATION_REPORTED, "Location reported"),
+        (EVENT_LISTING_EXPIRING, "Listing expiring soon"),
+        (EVENT_LISTING_EXPIRED, "Listing expired"),
+        (EVENT_LISTING_RESOLVED, "Listing resolved"),
+        (EVENT_NEARBY_LISTING, "Nearby listing"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        help_text="Recipient of the notification",
+    )
+
+    event_type = models.CharField(
+        max_length=50,
+        choices=EVENT_TYPE_CHOICES,
+        help_text="What kind of event triggered this notification",
+    )
+
+    title = models.CharField(max_length=255)
+    body = models.TextField(blank=True)
+
+    data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Extra payload for deep-linking (e.g. listing_id)",
+    )
+
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Notification"
+        verbose_name_plural = "Notifications"
+
+    def __str__(self):
+        return f"{self.event_type} -> {self.user}"

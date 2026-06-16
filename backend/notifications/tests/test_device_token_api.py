@@ -66,7 +66,7 @@ class DeviceTokenApiTests(APITestCase):
         )
 
         self.client.force_authenticate(user=self.user)
-        res = self.client.delete(self.url, {"token": "tok-123"})
+        res = self.client.delete(f"{self.url}?token=tok-123")
 
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(DeviceToken.objects.filter(token="tok-123").exists())
@@ -77,7 +77,7 @@ class DeviceTokenApiTests(APITestCase):
         )
 
         self.client.force_authenticate(user=self.other)
-        res = self.client.delete(self.url, {"token": "tok-123"})
+        res = self.client.delete(f"{self.url}?token=tok-123")
 
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(DeviceToken.objects.filter(token="tok-123").exists())
