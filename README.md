@@ -11,6 +11,8 @@ The project is focused on **Poland**.
 ---
 
 > **Note:** The MVP is not yet complete. The backend is functional and below are current screenshots from the mobile interface.
+>
+> _README last updated: 2026-07-02_
 
 ## What's Already Working
 
@@ -25,6 +27,8 @@ The project is focused on **Poland**.
 - Mark listing as resolved
 - Profile screen with user's active and closed listings
 - Settings screens (profile update, password change, account deletion)
+- In-app chat (1:1 and group conversations, photo messages, live updates)
+- Report and browse listing locations on the map
 - Loading states, skeleton loaders, pull-to-refresh
 
 **Backend**
@@ -38,35 +42,50 @@ The project is focused on **Poland**.
 - Email login with API tests
 - Settings endpoints (profile update, password change, account deletion) with tests
 - In-app chat (REST API + WebSocket consumer, ticket-based auth, read receipts)
+- Push notifications (FCM) with online/offline delivery, device-token registration, and a persisted notification inbox
 
 **In progress**
-- In-app chat (mobile UI)
+- Push notifications (mobile integration)
 
 ---
 
 ## Screenshots
 
-### Creating a Listing
+> Screenshots are captured on iOS. The app is built for both iOS and Android — both are kept deployed in parallel during development.
+
+### Creating a Listing _(before the chat feature)_
 
 | Step 1 | Step 2 | Step 3 | Step 4 |
 |--------|--------|--------|--------|
-| ![Step 1](docs/screenshots/create-form-step1.jpeg) | ![Step 2](docs/screenshots/create-form-step2.jpeg) | ![Step 3](docs/screenshots/create-form-step3.jpeg) | ![Step 4](docs/screenshots/create-form-step4.jpeg) |
+| <img src="docs/screenshots/create-form-step1.jpeg" width="200" /> | <img src="docs/screenshots/create-form-step2.jpeg" width="200" /> | <img src="docs/screenshots/create-form-step3.jpeg" width="200" /> | <img src="docs/screenshots/create-form-step4.jpeg" width="200" /> |
 
 | Step 5.1 | Step 5.2 | Creating... | Created |
 |----------|----------|-------------|---------|
-| ![Step 5.1](docs/screenshots/create-form-step5.1.jpeg) | ![Step 5.2](docs/screenshots/create-form-step5.2.jpeg) | ![Creating](docs/screenshots/creating.jpeg) | ![Created](docs/screenshots/created.jpeg) |
+| <img src="docs/screenshots/create-form-step5.1.jpeg" width="200" /> | <img src="docs/screenshots/create-form-step5.2.jpeg" width="200" /> | <img src="docs/screenshots/creating.jpeg" width="200" /> | <img src="docs/screenshots/created.jpeg" width="200" /> |
 
-### Browsing & Details
+### Browsing & Details _(before the chat feature)_
 
 | Home (Lost) | Home (Found) | Listing View |
 |-------------|--------------|--------------|
-| ![Home Lost](docs/screenshots/home-lost-view.jpeg) | ![Home Found](docs/screenshots/home-found-view.jpeg) | ![Listing](docs/screenshots/listing-view.jpeg) |
+| <img src="docs/screenshots/home-lost-view.jpeg" width="200" /> | <img src="docs/screenshots/home-found-view.jpeg" width="200" /> | <img src="docs/screenshots/listing-view.jpeg" width="200" /> |
 
-### Profile & Settings
+### Report New Location
+
+| Locations in listing | Report location | After adding | Locations on map |
+|----------------------|-----------------|--------------|------------------|
+| <img src="docs/screenshots/locations-in-listing-screen.PNG" width="200" /> | <img src="docs/screenshots/location-reported.PNG" width="200" /> | <img src="docs/screenshots/locations-in-listing-screen-after-addition.PNG" width="200" /> | <img src="docs/screenshots/locations-map.PNG" width="200" /> |
+
+### Profile & Settings _(before the chat feature)_
 
 | Profile | Settings |
 |---------|----------|
-| ![Profile](docs/screenshots/profile-view.jpeg) | ![Settings](docs/screenshots/settings-view.jpeg) |
+| <img src="docs/screenshots/profile-view.jpeg" width="200" /> | <img src="docs/screenshots/settings-view.jpeg" width="200" /> |
+
+### Chat
+
+| Conversations | Chat |
+|---------------|------|
+| <img src="docs/screenshots/chat-preview.PNG" width="200" /> | <img src="docs/screenshots/chat-view.PNG" width="200" /> |
 
 ### API Documentation
 
@@ -78,6 +97,10 @@ WebSocket API is documented in [docs/asyncapi.yaml](docs/asyncapi.yaml) (AsyncAP
 ---
 
 ## 1. Features
+
+> **Note:** This section describes the planned feature set. Not all of it
+> is implemented yet — see [What's Already Working](#whats-already-working) for
+> the current state.
 
 ### 1.1. For Users Who Found a Dog
 
@@ -154,6 +177,7 @@ WebSocket API is documented in [docs/asyncapi.yaml](docs/asyncapi.yaml) (AsyncAP
 Full documentation is available in the [docs/](docs/) folder.
 
 - [WebSocket API (AsyncAPI)](docs/asyncapi.yaml) — real-time chat over WSS
+- [Push notifications](docs/push-notifications.md) — FCM delivery model (online vs. offline)
 
 ---
 
@@ -165,5 +189,5 @@ This project is licensed under [CC BY-NC 4.0](https://creativecommons.org/licens
 
 ## 5. Author
 
-**Sebastian**
-- GitHub: [@yethan](https://github.com/yethan4)
+**Sebastian Cybul**
+- GitHub: [@sebastiancybul](https://github.com/sebastiancybul)

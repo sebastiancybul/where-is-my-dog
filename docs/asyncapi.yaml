@@ -180,6 +180,13 @@ operations:
       - `message_read` – a recipient read one of the user's messages
       - `all_messages_read` – a recipient connected to a conversation and read
         all of the user's previously unread messages in it
+      - `listing_inquiry` – someone opened a private conversation about the
+        user's listing
+      - `location_reported` – a new location was added to the user's listing
+
+      Chat events (`new_message`, `message_read`, `all_messages_read`) carry an
+      event-specific payload. Non-chat events (`listing_inquiry`,
+      `location_reported`) carry the persisted notification object.
     messages:
       - $ref: '#/channels/notifications/messages/receiveNotification'
 components:
@@ -421,6 +428,8 @@ components:
             - new_message
             - message_read
             - all_messages_read
+            - listing_inquiry
+            - location_reported
           description: >
             Type of the notification event.
 
@@ -431,6 +440,12 @@ components:
 
             - `all_messages_read` – a recipient connected to a conversation and
             read all of the user's previously unread messages in it
+
+            - `listing_inquiry` – someone opened a private conversation about
+            the user's listing
+
+            - `location_reported` – a new location was added to the user's
+            listing
         payload:
           type: object
           description: Event-specific data. Shape depends on `event_type`.
@@ -438,6 +453,7 @@ components:
             - $ref: '#/components/schemas/NewMessageNotificationPayload'
             - $ref: '#/components/schemas/MessageReadNotificationPayload'
             - $ref: '#/components/schemas/AllMessagesReadNotificationPayload'
+            - $ref: '#/components/schemas/PersistedNotificationPayload'
     NewMessageNotificationPayload:
       type: object
       required:
@@ -518,3 +534,49 @@ components:
       example:
         conversation_id: 5
         read_by_user_id: 12
+    PersistedNotificationPayload:
+      type: object
+      description: >
+        The stored notification object, delivered for non-chat events
+        (`listing_inquiry`, `location_reported`). The same object is returned by
+        the notification inbox REST API.
+      required:
+        - id
+        - event_type
+        - title
+        - body
+        - data
+        - is_read
+        - created_at
+      properties:
+        id:
+          type: integer
+          description: ID of the persisted notification
+        event_type:
+          type: string
+          description: Event type, matching the enclosing `event_type`
+        title:
+          type: string
+        body:
+          type: string
+        data:
+          type: object
+          description: >
+            Extra payload for deep-linking (e.g. `listing_id`, `conversation_id`,
+            `location_id`). Values keep their native JSON types over WebSocket.
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp of when the notification was created
+      example:
+        id: 17
+        event_type: listing_inquiry
+        title: alice · Beagle near Old Town
+        body: Someone contacted you about your listing
+        data:
+          conversation_id: 12
+          listing_id: 45
+        is_read: false
+        created_at: '2026-07-02T10:15:00.000Z'
