@@ -1,10 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
+import { AppState, AppStateStatus } from 'react-native'
 import axios from 'axios'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationEventMap, NotificationEventType } from '@/types/notifications'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL
+const HEARTBEAT_MS = 30000
 
 type Handler<T> = (payload: T) => void
 type AnyHandler = Handler<any>
@@ -28,6 +30,23 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconnectDelayRef = useRef(2000)
   const intentionalCloseRef = useRef(false)
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current)
+      heartbeatRef.current = null
+    }
+  }, [])
+
+  const startHeartbeat = useCallback(() => {
+    stopHeartbeat()
+    heartbeatRef.current = setInterval(() => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'ping' }))
+      }
+    }, HEARTBEAT_MS)
+  }, [stopHeartbeat])
 
   const connect = useCallback(async () => {
     if (wsRef.current || intentionalCloseRef.current) return
@@ -42,11 +61,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       ws.onopen = () => {
         setIsConnected(true)
         reconnectDelayRef.current = 2000
+        startHeartbeat()
       }
 
       ws.onclose = () => {
         setIsConnected(false)
         wsRef.current = null
+        stopHeartbeat()
         if (!intentionalCloseRef.current) {
           reconnectTimerRef.current = setTimeout(connect, reconnectDelayRef.current)
           reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, 30000)
@@ -67,34 +88,39 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, 30000)
       }
     }
-  }, [])
+  }, [startHeartbeat, stopHeartbeat])
+
+  const disconnect = useCallback(() => {
+    intentionalCloseRef.current = true
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current)
+      reconnectTimerRef.current = null
+    }
+    stopHeartbeat()
+    wsRef.current?.close()
+    wsRef.current = null
+  }, [stopHeartbeat])
 
   useEffect(() => {
     if (authState.isLoading) return
 
-    if (authState.isAuthenticated) {
-      intentionalCloseRef.current = false
-      connect()
-    } else {
-      intentionalCloseRef.current = true
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current)
-        reconnectTimerRef.current = null
+    const evaluate = (state: AppStateStatus) => {
+      if (authState.isAuthenticated && state === 'active') {
+        intentionalCloseRef.current = false
+        connect()
+      } else {
+        disconnect()
       }
-      wsRef.current?.close()
-      wsRef.current = null
     }
 
+    evaluate(AppState.currentState)
+    const subscription = AppState.addEventListener('change', evaluate)
+
     return () => {
-      intentionalCloseRef.current = true
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current)
-        reconnectTimerRef.current = null
-      }
-      wsRef.current?.close()
-      wsRef.current = null
+      subscription.remove()
+      disconnect()
     }
-  }, [authState.isAuthenticated, authState.isLoading, connect])
+  }, [authState.isAuthenticated, authState.isLoading, connect, disconnect])
 
   const subscribe = useCallback(<K extends NotificationEventType>(
     eventType: K,
