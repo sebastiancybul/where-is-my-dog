@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { Platform } from 'react-native';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -123,6 +124,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = async () => {
+        if (Platform.OS === 'android') {
+            try {
+                const { getMessaging, getToken } = await import('@react-native-firebase/messaging');
+                const token = await getToken(getMessaging());
+                await axios.delete(`${API_URL}/api/notifications/devices/`, { params: { token } });
+            } catch {}
+        }
+
         await SecureStore.deleteItemAsync('access_token');
         await SecureStore.deleteItemAsync('refresh_token');
 

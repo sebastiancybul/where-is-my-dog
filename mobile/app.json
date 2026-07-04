@@ -9,11 +9,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.whereismydog.app",
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.whereismydog.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
@@ -28,6 +31,7 @@
       [
         "expo-splash-screen",
         {
+          "image": "./assets/images/dog-placeholder.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -35,7 +39,9 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
     ],
     "experiments": {
       "typedRoutes": true,
