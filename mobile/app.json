@@ -4,6 +4,7 @@
     "slug": "where-is-my-dog",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
     "scheme": "whereismydog",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -18,7 +19,8 @@
       "package": "com.whereismydog.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE"
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#1886FD"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -31,12 +33,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/dog-placeholder.png",
+          "image": "./assets/images/logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#ffffff"
           }
         }
       ],
