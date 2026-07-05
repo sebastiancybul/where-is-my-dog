@@ -12,7 +12,7 @@ The project is focused on **Poland**.
 
 > **Note:** The MVP is not yet complete. The backend is functional and below are current screenshots from the mobile interface.
 >
-> _README last updated: 2026-07-02_
+> _README last updated: 2026-07-05_
 
 ## What's Already Working
 
@@ -28,6 +28,9 @@ The project is focused on **Poland**.
 - Profile screen with user's active and closed listings
 - Settings screens (profile update, password change, account deletion)
 - In-app chat (1:1 and group conversations, photo messages, live updates)
+- Real-time in-app notifications over WebSocket while the app is open — live toast banner and unread-badge updates (both platforms)
+- Push notifications when the app is backgrounded or closed — **Android only** (no Apple Developer account for iOS); device-token registration and tap deep-linking to the relevant chat or listing
+- Notification inbox (persisted) with unread badge, mark-as-read and mark-all-read
 - Report and browse listing locations on the map
 - Loading states, skeleton loaders, pull-to-refresh
 
@@ -42,10 +45,7 @@ The project is focused on **Poland**.
 - Email login with API tests
 - Settings endpoints (profile update, password change, account deletion) with tests
 - In-app chat (REST API + WebSocket consumer, ticket-based auth, read receipts)
-- Push notifications (FCM) with online/offline delivery, device-token registration, and a persisted notification inbox
-
-**In progress**
-- Push notifications (mobile integration)
+- Notifications: real-time over WebSocket when the user is online, FCM push when offline; device-token registration, unread-count endpoint, and a persisted inbox
 
 ---
 
