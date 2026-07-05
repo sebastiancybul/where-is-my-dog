@@ -66,4 +66,10 @@ notification_viewset_schema = extend_schema_view(
             )
         },
     ),
+    unread_count=extend_schema(
+        tags=["Notifications"],
+        summary="Count my unread notifications",
+        description="Returns the number of unread notifications for the current user.",
+        responses={200: OpenApiTypes.OBJECT},
+    ),
 )

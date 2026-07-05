@@ -67,3 +67,8 @@ class NotificationViewSet(viewsets.GenericViewSet):
     def read_all(self, request):
         self.get_queryset().filter(is_read=False).update(is_read=True)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["get"], url_path="unread-count")
+    def unread_count(self, request):
+        count = self.get_queryset().filter(is_read=False).count()
+        return Response({"count": count})

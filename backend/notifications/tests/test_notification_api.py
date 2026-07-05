@@ -102,3 +102,16 @@ class NotificationInboxTests(APITestCase):
         )
         other.refresh_from_db()
         self.assertFalse(other.is_read)
+
+    def test_unread_count_counts_only_own_unread(self):
+        self._make(self.user, is_read=False)
+        self._make(self.user, is_read=False)
+        self._make(self.user, is_read=True)
+        self._make(self.other, is_read=False)
+        self.client.force_authenticate(self.user)
+        url = reverse("notifications:notification-unread-count")
+
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["count"], 2)
