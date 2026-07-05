@@ -27,10 +27,15 @@ export const PushProvider = ({ children }: { children: ReactNode }) => {
     ) => {
       const data = message?.data
       if (!data) return
-      if (data.event_type === 'new_message' && data.conversation_id) {
+      if (data.conversation_id) {
         router.push({
           pathname: '/chat/[id]',
           params: { id: String(data.conversation_id) },
+        })
+      } else if (data.listing_id) {
+        router.push({
+          pathname: '/listing/[id]',
+          params: { id: String(data.listing_id) },
         })
       }
     }

@@ -1,5 +1,9 @@
 import { View, Text, Pressable, FlatList, Modal, ScrollView, RefreshControl } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter, useFocusEffect } from 'expo-router'
+import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications } from '@/contexts/NotificationContext'
+import { INBOX_EVENT_TYPES } from '@/types/notifications'
 import { Ionicons } from '@expo/vector-icons';
 import ListingCard, { ListingCardItem } from "@/components/ListingCard";
 import axios from "axios";
@@ -46,6 +50,28 @@ const Index = () => {
   const listRef = useRef<FlatList>(null);
 
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+  const router = useRouter();
+  const { authState } = useAuth();
+  const { subscribe } = useNotifications();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!authState.isAuthenticated) return;
+      axios
+        .get(`${API_URL}/api/notifications/unread-count/`)
+        .then((res) => setUnreadCount(res.data.count))
+        .catch(() => {});
+    }, [authState.isAuthenticated])
+  );
+
+  useEffect(() => {
+    const unsubs = INBOX_EVENT_TYPES.map((event) =>
+      subscribe(event, () => setUnreadCount((c) => c + 1))
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [subscribe]);
 
   const toggleFilter = <K extends keyof Filters>(
     key: K,
@@ -123,9 +149,19 @@ const Index = () => {
           </View>
         </View>
 
-        <View className="bg-white rounded-full p-2">
-          <Ionicons name="notifications-outline" size={24} className="" />
-        </View>
+        <Pressable
+          onPress={() => router.push('/notifications')}
+          className="bg-white rounded-full p-2 active:opacity-80"
+        >
+          <Ionicons name="notifications-outline" size={24} />
+          {unreadCount > 0 && (
+            <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-5 h-5 px-1 items-center justify-center">
+              <Text className="text-white text-xs font-bold">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       <View className="flex-row mr-14 pr-1 gap-4">
