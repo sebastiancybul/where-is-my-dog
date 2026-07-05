@@ -32,7 +32,10 @@ const ConversationScreen = () => {
   const [input, setInput] = useState('');
   const [zoomUri, setZoomUri] = useState<string | null>(null);
   const [pendingImage, setPendingImage] = useState<PickedImage | null>(null);
+  const [listingId, setListingId] = useState<number | null>(null);
+  const [fetchedTitle, setFetchedTitle] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
+  const headerTitle = listing_title || fetchedTitle;
 
   const fetchMessages = async () => {
     try {
@@ -42,6 +45,19 @@ const ConversationScreen = () => {
     } finally {
       setLoading(false);
     }
+  }
+
+  const fetchConversation = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/chats/conversations/${id}/`);
+      setListingId(res.data.listing_id ?? null);
+      setFetchedTitle(res.data.listing_title ?? '');
+    } catch {}
+  }
+
+  const openListing = () => {
+    if (listingId == null) return;
+    router.push({ pathname: '/listing/[id]', params: { id: String(listingId) } });
   }
 
   const connectWs = async () => {
@@ -105,6 +121,7 @@ const ConversationScreen = () => {
     useCallback(() => {
       setLoading(true)
       fetchMessages()
+      fetchConversation()
       connectWs()
       return () => {
         wsRef.current?.close()
@@ -188,15 +205,33 @@ const ConversationScreen = () => {
         <View className="flex-1">
           {isGroup ? (
             <>
-              <Text className="text-lg font-bold text-slate-800" numberOfLines={1}>
-                {listing_title || 'Group Chat'}
-              </Text>
+              <Pressable
+                onPress={openListing}
+                disabled={listingId == null}
+                className="flex-row items-center gap-1 active:opacity-60 self-start"
+              >
+                <Text className="text-lg font-bold text-slate-800" numberOfLines={1}>
+                  {headerTitle || 'Group Chat'}
+                </Text>
+                {listingId != null && (
+                  <Ionicons name="chevron-forward" size={16} color="#818cf8" />
+                )}
+              </Pressable>
               <Text className="text-sm text-indigo-400 font-medium">Group chat</Text>
             </>
           ) : (
             <>
-              {listing_title ? (
-                <Text className="text-lg text-indigo-400 font-medium" numberOfLines={1}>{listing_title}</Text>
+              {headerTitle ? (
+                <Pressable
+                  onPress={openListing}
+                  disabled={listingId == null}
+                  className="flex-row items-center gap-1 active:opacity-60 self-start"
+                >
+                  <Text className="text-lg text-indigo-400 font-medium" numberOfLines={1}>{headerTitle}</Text>
+                  {listingId != null && (
+                    <Ionicons name="chevron-forward" size={14} color="#818cf8" />
+                  )}
+                </Pressable>
               ) : null}
               <Text className="text-base font-bold text-slate-800" numberOfLines={1}>
                 {other_username || 'Conversation'}
