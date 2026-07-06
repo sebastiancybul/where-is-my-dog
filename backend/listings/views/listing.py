@@ -28,6 +28,7 @@ from ..serializers import (
 from ..schemas import (
     listing_viewset_schema,
     mark_found_schema,
+    bump_schema,
     nearby_schema,
     upload_photo_schema,
     delete_photo_schema,
@@ -88,6 +89,26 @@ class ListingViewSet(viewsets.ModelViewSet):
             listing.status = Listing.STATUS_RETURNED
 
         listing.save()
+
+        serializer = self.get_serializer(listing)
+        return Response(serializer.data)
+
+    @bump_schema
+    @action(detail=True, methods=["post"])
+    def bump(self, request, pk=None):
+        """
+        Renew a listing: reset its expiry window and clear the
+        'expiring soon' guard. Owner-only, active listings only.
+        """
+        listing = self.get_object()
+
+        if not listing.is_active:
+            return Response(
+                {"detail": "Only active listings can be bumped."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        listing.renew()
 
         serializer = self.get_serializer(listing)
         return Response(serializer.data)

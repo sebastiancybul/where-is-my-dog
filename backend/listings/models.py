@@ -33,6 +33,12 @@ class Listing(models.Model):
         (STATUS_RETURNED, "Returned to Owner"),
     ]
 
+    # Default active window per listing type
+    DEFAULT_EXPIRY_DAYS = {
+        TYPE_FOUND: 2,
+        TYPE_LOST: 5,
+    }
+
     # Dog sizes
     SIZE_SMALL = "small"
     SIZE_MEDIUM = "medium"
@@ -172,6 +178,11 @@ class Listing(models.Model):
     expires_at = models.DateTimeField(
         blank=True, null=True, help_text="When this listing expires"
     )
+    expiring_notified_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="When the 'expiring soon' warning was sent (once)",
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -182,17 +193,24 @@ class Listing(models.Model):
         return f"{self.get_type_display()}: {self.title}"
 
     def save(self, *args, **kwargs):
-        """Auto-set exipres_at for new 'found' listings"""
+        """Auto-set expires_at for new active listings"""
 
         is_new = self.pk is None
 
         if is_new and self.status == self.STATUS_ACTIVE:
-            if self.type == self.TYPE_FOUND:
-                self.expires_at = timezone.now() + timedelta(days=2)
-            elif self.type == self.TYPE_LOST:
-                self.expires_at = timezone.now() + timedelta(days=5)
+            days = self.DEFAULT_EXPIRY_DAYS.get(self.type)
+            if days:
+                self.expires_at = timezone.now() + timedelta(days=days)
 
         super().save(*args, **kwargs)
+
+    def renew(self):
+        """Reset the expiry window and clear the 'expiring soon' guard."""
+        days = self.DEFAULT_EXPIRY_DAYS.get(self.type)
+        if days:
+            self.expires_at = timezone.now() + timedelta(days=days)
+        self.expiring_notified_at = None
+        self.save(update_fields=["expires_at", "expiring_notified_at"])
 
     @property
     def is_active(self):

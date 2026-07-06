@@ -36,6 +36,7 @@ class ListingListSerializer(serializers.ModelSerializer):
             "has_collar",
             "collar_color",
             "created_at",
+            "expires_at",
         )
 
     def get_primary_location(self, obj):
@@ -98,11 +99,13 @@ class ListingSerializer(serializers.ModelSerializer):
             "public_conversation_is_closed",
             "created_at",
             "updated_at",
+            "expires_at",
         )
         read_only_fields = (
             "id",
             "created_at",
             "updated_at",
+            "expires_at",
         )
 
     def get_primary_location(self, obj):

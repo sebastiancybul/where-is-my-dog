@@ -13,6 +13,10 @@ app.conf.beat_schedule = {
         "task": "listings.tasks.check_and_expire_listings",
         "schedule": crontab(minute=0, hour="*/2"),
     },
+    "notify-expiring-listings-hourly": {
+        "task": "listings.tasks.notify_expiring_listings",
+        "schedule": crontab(minute=30),
+    },
 }
 app.conf.timezone = "Europe/Warsaw"
 

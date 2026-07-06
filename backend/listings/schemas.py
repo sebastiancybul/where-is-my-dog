@@ -38,6 +38,39 @@ mark_found_schema = extend_schema(
     },
 )
 
+bump_schema = extend_schema(
+    summary="Bump (renew) a listing",
+    description=(
+        "Reset the listing's expiry window to the default for its type "
+        "and clear the 'expiring soon' guard. Only the owner can bump, "
+        "and only while the listing is active."
+    ),
+    request=None,
+    responses={
+        200: ListingSerializer,
+        400: OpenApiResponse(
+            description="Listing is not active",
+            examples=[
+                OpenApiExample(
+                    "Not active",
+                    value={"detail": "Only active listings can be bumped."},
+                )
+            ],
+        ),
+        403: OpenApiResponse(
+            description="Not the owner of this listing",
+            examples=[
+                OpenApiExample(
+                    "Forbidden",
+                    value={
+                        "detail": "You do not have permission to perform this action."
+                    },
+                )
+            ],
+        ),
+    },
+)
+
 nearby_schema = extend_schema(
     summary="Find listings near a location",
     description=(

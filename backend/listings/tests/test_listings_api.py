@@ -2,10 +2,12 @@
 Tests for the listings API
 """
 
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -35,6 +37,11 @@ def detail_url(listing_id):
 def mark_found_url(listing_id):
     """Generate URL for mark_found action"""
     return reverse("listing-mark-found", args=[listing_id])
+
+
+def bump_url(listing_id):
+    """Generate URL for bump action"""
+    return reverse("listing-bump", args=[listing_id])
 
 
 def upload_photo_url(listing_id):
@@ -473,3 +480,51 @@ class DuplicateDetectionTests(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 0)
+
+
+class BumpListingTests(APITestCase):
+    """Tests for the bump (renew) action"""
+
+    def setUp(self):
+        self.user = create_user(username="owner", email="owner@example.com")
+        self.other_user = create_user(
+            username="stranger", email="stranger@example.com"
+        )
+        self.client.force_authenticate(user=self.user)
+        self.listing = create_listing(
+            self.user, type=Listing.TYPE_LOST, title="My Dog"
+        )
+
+    def test_bump_own_active_listing_extends_expiry(self):
+        """Owner can bump: expiry is pushed out and guard is cleared"""
+        soon = timezone.now() + timedelta(hours=3)
+        Listing.objects.filter(pk=self.listing.pk).update(
+            expires_at=soon, expiring_notified_at=timezone.now()
+        )
+
+        res = self.client.post(bump_url(self.listing.id))
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.listing.refresh_from_db()
+        self.assertGreater(
+            self.listing.expires_at, timezone.now() + timedelta(days=4)
+        )
+        self.assertIsNone(self.listing.expiring_notified_at)
+
+    def test_bump_other_user_listing_fails(self):
+        """Non-owner cannot bump"""
+        self.client.force_authenticate(user=self.other_user)
+
+        res = self.client.post(bump_url(self.listing.id))
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_bump_inactive_listing_fails(self):
+        """Bumping a non-active listing is rejected"""
+        Listing.objects.filter(pk=self.listing.pk).update(
+            status=Listing.STATUS_EXPIRED
+        )
+
+        res = self.client.post(bump_url(self.listing.id))
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
