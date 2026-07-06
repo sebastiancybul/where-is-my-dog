@@ -5,6 +5,7 @@ import axios from "axios";
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useListing } from "@/contexts/ListingContext";
+import { DEFAULT_EXPIRY_DAYS } from "@/types/listing";
 import LocationHistory from "@/components/LocationHistory";
 
 
@@ -20,6 +21,7 @@ const Details = () => {
   const [markResolvedSuccess, setMarkResolvedSuccess] = useState<boolean>(false);
   const [isStartingChat, setIsStartingChat] = useState(false)
   const [isJoiningGroup, setIsJoiningGroup] = useState(false)
+  const [isBumping, setIsBumping] = useState(false)
 
 	const { authState } = useAuth();
   const { listing: listingData, refetch } = useListing()
@@ -126,6 +128,19 @@ const Details = () => {
     }
   }
 
+  const handleBump = async () => {
+    try {
+      setIsBumping(true)
+      await axios.post(`${API_URL}/api/listings/${id}/bump/`)
+      await refetch()
+      setIsMenuOpen(false)
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setIsBumping(false)
+    }
+  }
+
 	useEffect(() => {
 		setIsAuthor(authState?.user?.id == listingData?.user?.id)
 	}, [authState?.user, listingData?.user])
@@ -137,6 +152,36 @@ const Details = () => {
 	const subTitle = hasName
   ? [listingData?.breed, listingData?.age_estimate].filter(Boolean).join(' • ')
   : listingData?.age_estimate;
+
+  const getExpiryBadge = () => {
+    if (listingData?.status === 'expired') {
+      return { text: 'Expired', tone: 'expired' as const }
+    }
+    if (listingData?.status === 'active' && listingData?.expires_at) {
+      const date = new Date(listingData.expires_at)
+      const ms = date.getTime() - Date.now()
+      if (ms <= 0) return { text: 'Expired', tone: 'expired' as const }
+      const formatted = date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+      const soon = ms < 24 * 3_600_000
+      return { text: `Expires ${formatted}`, tone: soon ? ('soon' as const) : ('normal' as const) }
+    }
+    return null
+  }
+
+  const expiryBadge = getExpiryBadge()
+
+  const bumpDays = listingData ? DEFAULT_EXPIRY_DAYS[listingData.type] : 0
+
+  const expiryStyles = {
+    expired: 'bg-red-50 border-red-100',
+    soon: 'bg-red-50 border-red-100',
+    normal: 'bg-gray-50 border-gray-100',
+  }
+  const expiryTextStyles = {
+    expired: 'text-red-600',
+    soon: 'text-red-600',
+    normal: 'text-gray-500',
+  }
 
 
 	return (
@@ -194,6 +239,27 @@ const Details = () => {
 								<Text className="ml-2 font-bold text-yellow-700">
 									Reward: {listingData?.reward_offered} PLN
 								</Text>
+							</View>
+						)}
+
+						{isAuthor && expiryBadge && (
+							<View className={`flex-row items-center px-3 py-1.5 rounded-full self-start mt-4 border ${expiryStyles[expiryBadge.tone]}`}>
+								{expiryBadge.tone === 'normal' ? (
+									<Ionicons name="time-outline" size={16} color="#6B7280" />
+								) : (
+									<Ionicons name="warning" size={16} color="#dc2626" />
+								)}
+								<Text className={`ml-1.5 text-sm font-semibold ${expiryTextStyles[expiryBadge.tone]}`}>
+									{expiryBadge.text}
+								</Text>
+							</View>
+						)}
+
+						{isAuthor && expiryBadge?.tone === 'soon' && (
+							<View className="flex-row items-center flex-wrap mt-1.5">
+								<Text className="text-xs text-gray-400">Tap Manage listing </Text>
+								<Ionicons name="arrow-forward" size={12} color="#9ca3af" />
+								<Text className="text-xs text-gray-400"> Bump to keep it active</Text>
 							</View>
 						)}
 					</View>
@@ -400,7 +466,24 @@ const Details = () => {
                   <Text className="text-green-700 text-base font-semibold">Mark as resolved</Text>
                 </Pressable>
               )}
-            </View> 
+              {listingData?.status === 'active' && (
+                <Pressable
+                  onPress={handleBump}
+                  disabled={isBumping}
+                  className="flex-row items-center gap-3 px-5 py-4 active:bg-yellow-50"
+                >
+                  {isBumping ? (
+                    <ActivityIndicator size="small" color="#EAB308" />
+                  ) : (
+                    <Ionicons name="refresh-outline" size={20} color="#EAB308" />
+                  )}
+                  <View>
+                    <Text className="text-yellow-700 text-base font-semibold">Bump listing</Text>
+                    <Text className="text-gray-400 text-xs">Renews for {bumpDays} days</Text>
+                  </View>
+                </Pressable>
+              )}
+            </View>
           }
 					<Pressable
             onPress={() => setIsMenuOpen(!isMenuOpen)}

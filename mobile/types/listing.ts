@@ -36,6 +36,11 @@ export interface ListingPhoto {
 export type ListingType = 'lost' | 'found'
 type ListingStatus = 'active' | 'expired' | 'found' | 'returned'
 
+export const DEFAULT_EXPIRY_DAYS: Record<ListingType, number> = {
+  lost: 5,
+  found: 2,
+}
+
 export interface ListingItem {
   id: number;
   user: UserPreview;
@@ -63,5 +68,6 @@ export interface ListingItem {
   public_conversation_is_closed: boolean | null;
   created_at: string;
   updated_at: string;
+  expires_at: string | null;
 }
 
