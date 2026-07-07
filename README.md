@@ -25,6 +25,7 @@ The project is focused on **Poland**.
 - Multi-step create listing form (photos, location, characteristics)
 - Edit and delete own listings
 - Mark listing as resolved
+- Listing expiry badge on your own listings with a highlighted urgent state, plus one-tap bump to renew
 - Profile screen with user's active and closed listings
 - Settings screens (profile update, password change, account deletion)
 - In-app chat (1:1 and group conversations, photo messages, live updates)
@@ -39,7 +40,8 @@ The project is focused on **Poland**.
 - Listings CRUD with photo upload (Cloudinary)
 - PostGIS-based location support
 - Multi-select filtering
-- Automatic listing expiration (Celery)
+- Automatic listing expiration via Celery, with expiring-soon warnings sent once per listing
+- Listing bump endpoint, owner-only, that renews the expiry window
 - Basic duplicate detection
 - Owner/permission checks on all mutating endpoints
 - Email login with API tests
