@@ -3,6 +3,7 @@ import './global.css'
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PushProvider } from "@/contexts/PushContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { LocationProvider } from "@/contexts/LocationContext";
 import NotificationToast from "@/components/NotificationToast";
 
 export default function RootLayout() {
@@ -10,6 +11,7 @@ export default function RootLayout() {
     <AuthProvider>
       <PushProvider>
       <NotificationProvider>
+      <LocationProvider>
       <Stack>
         <Stack.Screen 
           name="(tabs)"
@@ -37,6 +39,7 @@ export default function RootLayout() {
         />
       </Stack>
       <NotificationToast />
+      </LocationProvider>
       </NotificationProvider>
       </PushProvider>
     </AuthProvider>

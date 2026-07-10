@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
+import { useLocation } from '@/contexts/LocationContext'
 import { INBOX_EVENT_TYPES } from '@/types/notifications'
 import { Ionicons } from '@expo/vector-icons';
 import ListingCard, { ListingCardItem } from "@/components/ListingCard";
@@ -10,6 +11,7 @@ import axios from "axios";
 import { COLOR_OPTIONS, GENDER_OPTIONS, SIZE_OPTIONS } from "@/constants/dogOptions";
 import BreedPicker from "@/components/BreedPicker";
 import ListingCardSkeleton from "@/components/skeletons/ListingCardSkeleton";
+import LocationFilterModal from "@/components/LocationFilterModal";
 
 interface ListingsResponse {
   results: ListingCardItem[];
@@ -37,6 +39,7 @@ const Index = () => {
   const [listingType, setListingType] = useState<'found' | 'lost'>('lost');
   const [loading, setLoading] = useState<boolean>(true);
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [draftFilters, setDraftFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [pages, setPages] = useState<{lost: number, found: number}>({ lost: 1, found: 1});
@@ -54,6 +57,7 @@ const Index = () => {
   const router = useRouter();
   const { authState } = useAuth();
   const { subscribe } = useNotifications();
+  const { location, isReady } = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useFocusEffect(
@@ -95,6 +99,7 @@ const Index = () => {
 
   const applyFilters = () => {
     setFilters(draftFilters);
+    setPages({ lost: 1, found: 1 });
     setShowFilters(false);
   };
 
@@ -111,8 +116,11 @@ const Index = () => {
   const fetchListings = async() => {
     try {
       setLoading(true);
-      const response = await axios.get<ListingsResponse>(`${API_URL}/api/listings/`, {
+      const response = await axios.get<ListingsResponse>(`${API_URL}/api/listings/nearby/`, {
         params: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          radius_km: location.radius,
           type: listingType,
           status: 'active',
           ...(filters.breed.length > 0 && { breed: filters.breed.join(',') }),
@@ -133,21 +141,24 @@ const Index = () => {
   }
 
   useEffect(() => {
+    if (!isReady) return;
     fetchListings();
-  }, [listingType, filters, pages]);
+  }, [listingType, filters, pages, location, isReady]);
 
 
   return (
     <View className="pt-safe px-4">
       {/* header */}
       <View className="pl-2 pt-4 pb-2 flex-row justify-between items-center">
-        <View>
+        <Pressable className="active:opacity-80" onPress={() => setShowLocationPicker(true)}>
           <Text className="text-gray-500 text-sm font-medium uppercase tracking-wider">Location</Text>
           <View className="flex-row items-center mt-1">
             <Ionicons name="location" size={24} color="#2563EB" />
-            <Text className="text-3xl font-bold tracking-wide">Lublin</Text>
+            <Text className="text-3xl font-bold tracking-wide">{location.label}</Text>
+            <Text className="text-lg font-semibold text-gray-400 ml-2">· {location.radius} km</Text>
+            <Ionicons name="chevron-down" size={22} color="#6B7280" />
           </View>
-        </View>
+        </Pressable>
 
         <Pressable
           onPress={() => router.push('/notifications')}
@@ -386,6 +397,12 @@ const Index = () => {
             </Pressable>
         </View>
       </Modal>
+
+      <LocationFilterModal
+        visible={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onApplied={() => setPages({ lost: 1, found: 1 })}
+      />
     </View>
   )
 }
