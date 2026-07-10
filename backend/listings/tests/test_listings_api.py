@@ -174,9 +174,31 @@ class PublicListingsApiTests(APITestCase):
         )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(
-            len(res.data), 1
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(
+            res.data["results"][0]["title"], self.listing.title
         )  # self.listing 22.5684, 51.2465 <1km # noqa
+
+    def test_nearby_listings_apply_list_filters(self):
+        """Test that nearby supports the same filters as the list"""
+        create_listing(
+            self.user, title="Small dog nearby", size=Listing.SIZE_SMALL
+        )
+
+        url = nearby_url()
+        res = self.client.get(
+            url,
+            {
+                "latitude": 51.2465,
+                "longitude": 22.5684,
+                "radius_km": 5,
+                "size": "small",
+            },
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(res.data["results"][0]["title"], "Small dog nearby")
 
     def test_create_listing_fails_unauthenticated(self):
         """Test that creating listing requires authentication"""
