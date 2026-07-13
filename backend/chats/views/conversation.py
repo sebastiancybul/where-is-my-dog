@@ -122,17 +122,36 @@ class ConversationViewSet(viewsets.GenericViewSet):
         )
 
         listing = conversation.listing
-        if listing and listing.user_id != request.user.id:
-            dispatch_notification(
-                user_id=listing.user_id,
-                event_type=Notification.EVENT_LISTING_INQUIRY,
-                title=f"{request.user.username} · {listing.title}",
-                body="Someone contacted you about your listing",
-                data={
-                    "conversation_id": conversation.pk,
-                    "listing_id": listing.pk,
-                },
-            )
+        if listing:
+            if listing.user_id != request.user.id:
+                dispatch_notification(
+                    user_id=listing.user_id,
+                    event_type=Notification.EVENT_LISTING_INQUIRY,
+                    title=f"{request.user.username} · {listing.title}",
+                    body="Someone contacted you about your listing",
+                    data={
+                        "conversation_id": conversation.pk,
+                        "listing_id": listing.pk,
+                    },
+                )
+            else:
+                if listing.type == listing.TYPE_LOST:
+                    body = "The owner contacted you about the dog you spotted"
+                else:
+                    body = (
+                        "The finder contacted you about "
+                        "the dog you reported"
+                    )
+                dispatch_notification(
+                    user_id=other_user.id,
+                    event_type=Notification.EVENT_LISTING_AUTHOR_CONTACT,
+                    title=f"{request.user.username} · {listing.title}",
+                    body=body,
+                    data={
+                        "conversation_id": conversation.pk,
+                        "listing_id": listing.pk,
+                    },
+                )
 
         return Response(
             self.get_serializer(conversation).data,

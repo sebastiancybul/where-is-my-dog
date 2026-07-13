@@ -25,6 +25,7 @@ export type NotificationEventMap = {
   message_read: MessageReadPayload
   all_messages_read: AllMessagesReadPayload
   listing_inquiry: InboxNotification
+  listing_author_contact: InboxNotification
   location_reported: InboxNotification
   listing_expiring: InboxNotification
   listing_expired: InboxNotification
@@ -36,6 +37,7 @@ export type NotificationEventType = keyof NotificationEventMap
 
 export const INBOX_EVENT_TYPES = [
   'listing_inquiry',
+  'listing_author_contact',
   'location_reported',
   'listing_expiring',
   'listing_expired',

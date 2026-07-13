@@ -1,6 +1,7 @@
 import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import axios from 'axios';
+import { router } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +14,7 @@ const LocationHistory = () => {
   const { listing: listingData, refetch } = useListing();
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [messagingId, setMessagingId] = useState<number | null>(null);
 
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -24,6 +26,32 @@ const LocationHistory = () => {
     const userId = authState.user?.id;
     if (!userId) return false;
     return userId === location.added_by_user?.id || userId === listingData?.user?.id;
+  };
+
+  const canMessage = (location: ListingLocation) => {
+    const userId = authState.user?.id;
+    const reporterId = location.added_by_user?.id;
+    if (!userId || !reporterId) return false;
+    return userId === listingData?.user?.id && reporterId !== userId;
+  };
+
+  const handleMessage = async (location: ListingLocation) => {
+    const reporterId = location.added_by_user?.id;
+    if (!reporterId) return;
+    try {
+      setMessagingId(location.id);
+      const res = await axios.post(
+        `${API_URL}/api/chats/conversations/`,
+        { user_id: reporterId, listing_id: listingData?.id },
+        { headers: { Authorization: `Bearer ${authState.token}` } }
+      );
+      router.push(`/chat/${res.data.id}`);
+    } catch (e) {
+      console.log(e);
+      Alert.alert('Something went wrong. Please try again.');
+    } finally {
+      setMessagingId(null);
+    }
   };
 
   const handleDelete = (location: ListingLocation) => {
@@ -80,6 +108,20 @@ const LocationHistory = () => {
                 <Text className="text-xs text-gray-500 italic mt-1">{location.notes}</Text>
               )}
             </View>
+
+            {canMessage(location) && (
+              messagingId === location.id ? (
+                <ActivityIndicator size="small" color="#1e293b" />
+              ) : (
+                <Pressable
+                  onPress={() => handleMessage(location)}
+                  disabled={messagingId !== null}
+                  className="p-2 active:opacity-60"
+                >
+                  <Ionicons name="chatbubble-ellipses-outline" size={20} color="#1e293b" />
+                </Pressable>
+              )
+            )}
 
             {canDelete(location) && (
               deletingId === location.id ? (
