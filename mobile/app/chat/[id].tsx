@@ -34,6 +34,7 @@ const ConversationScreen = () => {
   const [pendingImage, setPendingImage] = useState<PickedImage | null>(null);
   const [listingId, setListingId] = useState<number | null>(null);
   const [fetchedTitle, setFetchedTitle] = useState('');
+  const [fetchedUsername, setFetchedUsername] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
   const headerTitle = listing_title || fetchedTitle;
 
@@ -52,6 +53,7 @@ const ConversationScreen = () => {
       const res = await axios.get(`${API_URL}/api/chats/conversations/${id}/`);
       setListingId(res.data.listing_id ?? null);
       setFetchedTitle(res.data.listing_title ?? '');
+      setFetchedUsername(res.data.other_participant?.username ?? '');
     } catch {}
   }
 
@@ -234,7 +236,7 @@ const ConversationScreen = () => {
                 </Pressable>
               ) : null}
               <Text className="text-base font-bold text-slate-800" numberOfLines={1}>
-                {other_username || 'Conversation'}
+                {other_username || fetchedUsername || 'Conversation'}
               </Text>
             </>
           )}
