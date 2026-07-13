@@ -70,7 +70,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.action in ("list", "nearby"):
             return ListingListSerializer
         return ListingSerializer
 
@@ -122,13 +122,13 @@ class ListingViewSet(viewsets.ModelViewSet):
         Query params:
         - latitude (required)
         - longitude (required)
-        - radius_km (optional, default 5)
-        - type (optional: 'lost' or 'found')
+        - radius_km (optional, default 5, max 40)
+        - plus all standard list filters (type, status, breed, size,
+          color, gender) and pagination (page)
         """
         lat = request.query_params.get("latitude")
         lng = request.query_params.get("longitude")
         radius_km = request.query_params.get("radius_km", 5)
-        listing_type = request.query_params.get("type")
 
         if not lat or not lng:
             return Response(
@@ -146,13 +146,14 @@ class ListingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if radius_km > 10:
-            radius_km = 10
+        if radius_km > 40:
+            radius_km = 40
 
         user_location = Point(lng, lat, srid=4326)
 
         queryset = (
-            Listing.objects.filter(
+            self.filter_queryset(self.get_queryset())
+            .filter(
                 locations__is_primary=True,
                 locations__point__distance_lte=(
                     user_location,
@@ -163,8 +164,10 @@ class ListingViewSet(viewsets.ModelViewSet):
             .order_by("distance")
         )
 
-        if listing_type:
-            queryset = queryset.filter(type=listing_type)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

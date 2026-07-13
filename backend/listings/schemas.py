@@ -7,6 +7,7 @@ from drf_spectacular.utils import (
 
 from .serializers import (
     ListingSerializer,
+    ListingListSerializer,
     PhotoSerializer,
     PhotoDeleteSerializer,
     LocationSerializer,
@@ -72,10 +73,13 @@ bump_schema = extend_schema(
 )
 
 nearby_schema = extend_schema(
+    filters=True,
     summary="Find listings near a location",
     description=(
         "Search for lost or found dog listings within a specified radius "
-        "of a geographic location. Results are ordered by distance (closest first)."
+        "of a geographic location. Results are ordered by distance (closest first). "
+        "Supports the same filters as the listing list (type, status, breed, "
+        "size, color, gender) and standard page-number pagination."
     ),
     parameters=[
         OpenApiParameter(
@@ -99,20 +103,12 @@ nearby_schema = extend_schema(
             type=float,
             location=OpenApiParameter.QUERY,
             required=False,
-            description="Search radius in kilometers (default: 5, max: 10)",
+            description="Search radius in kilometers (default: 5, max: 40)",
             examples=[OpenApiExample("Default", value=5)],
-        ),
-        OpenApiParameter(
-            name="type",
-            type=str,
-            location=OpenApiParameter.QUERY,
-            required=False,
-            description="Filter by listing type",
-            enum=["lost", "found"],
         ),
     ],
     responses={
-        200: ListingSerializer(many=True),
+        200: ListingListSerializer(many=True),
         400: OpenApiResponse(
             description="Invalid parameters",
             examples=[
