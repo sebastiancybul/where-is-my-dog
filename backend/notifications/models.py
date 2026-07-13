@@ -54,6 +54,7 @@ class Notification(models.Model):
     """
 
     EVENT_LISTING_INQUIRY = "listing_inquiry"
+    EVENT_LISTING_AUTHOR_CONTACT = "listing_author_contact"
     EVENT_LOCATION_REPORTED = "location_reported"
     EVENT_LISTING_EXPIRING = "listing_expiring"
     EVENT_LISTING_EXPIRED = "listing_expired"
@@ -61,6 +62,7 @@ class Notification(models.Model):
     EVENT_NEARBY_LISTING = "nearby_listing"
     EVENT_TYPE_CHOICES = [
         (EVENT_LISTING_INQUIRY, "Listing inquiry"),
+        (EVENT_LISTING_AUTHOR_CONTACT, "Listing author contact"),
         (EVENT_LOCATION_REPORTED, "Location reported"),
         (EVENT_LISTING_EXPIRING, "Listing expiring soon"),
         (EVENT_LISTING_EXPIRED, "Listing expired"),

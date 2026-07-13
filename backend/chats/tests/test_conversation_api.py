@@ -50,6 +50,30 @@ class ConversationInquiryNotificationTests(APITestCase):
         self.assertIn("conversation_id", kwargs["data"])
 
     @patch("chats.views.conversation.dispatch_notification")
+    def test_listing_author_contacting_reporter_notifies_reporter(
+        self, mock_dispatch
+    ):
+        reporter = create_user(
+            username="reporter", email="reporter@example.com"
+        )
+        self.client.force_authenticate(user=self.owner)
+
+        res = self.client.post(
+            self.url,
+            {"user_id": reporter.id, "listing_id": self.listing.id},
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        mock_dispatch.assert_called_once()
+        kwargs = mock_dispatch.call_args.kwargs
+        self.assertEqual(kwargs["user_id"], reporter.id)
+        self.assertEqual(
+            kwargs["event_type"], Notification.EVENT_LISTING_AUTHOR_CONTACT
+        )
+        self.assertEqual(kwargs["data"]["listing_id"], self.listing.id)
+        self.assertIn("conversation_id", kwargs["data"])
+
+    @patch("chats.views.conversation.dispatch_notification")
     def test_existing_conversation_does_not_notify(self, mock_dispatch):
         self.client.force_authenticate(user=self.inquirer)
         payload = {"user_id": self.owner.id, "listing_id": self.listing.id}
