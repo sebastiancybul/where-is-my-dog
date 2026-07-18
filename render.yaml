@@ -1,0 +1,65 @@
+databases:
+  - name: wimd-db
+    plan: free
+    region: frankfurt
+    databaseName: whereismydog
+    user: whereismydog
+
+services:
+  - type: keyvalue
+    name: wimd-redis
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: wimd-backend
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: ./start.sh
+    healthCheckPath: /api/schema/
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wimd-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: wimd-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: keyvalue
+          name: wimd-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: keyvalue
+          name: wimd-redis
+          property: connectionString
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "True"
+      - key: ALLOWED_HOSTS
+        fromService:
+          type: web
+          name: wimd-backend
+          property: host
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
