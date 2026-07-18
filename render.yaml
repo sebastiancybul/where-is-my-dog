@@ -49,10 +49,7 @@ services:
       - key: CELERY_TASK_ALWAYS_EAGER
         value: "True"
       - key: ALLOWED_HOSTS
-        fromService:
-          type: web
-          name: wimd-backend
-          property: host
+        value: wimd-backend.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
         sync: false
       - key: CORS_ALLOWED_ORIGINS
