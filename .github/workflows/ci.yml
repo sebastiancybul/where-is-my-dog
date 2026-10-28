@@ -74,7 +74,7 @@ jobs:
         run: python manage.py test
 
   mobile:
-    name: Mobile (expo lint)
+    name: Mobile (expo lint + tsc)
     runs-on: ubuntu-latest
 
     defaults:
@@ -95,3 +95,6 @@ jobs:
 
       - name: Lint (expo lint)
         run: npx expo lint
+
+      - name: Type check (tsc)
+        run: npx tsc --noEmit
