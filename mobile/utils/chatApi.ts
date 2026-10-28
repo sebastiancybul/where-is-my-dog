@@ -1,7 +1,5 @@
-import axios from 'axios'
+import { api } from '@/utils/api'
 import { Message, PickedImage } from '@/types/chat'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export const uploadChatImage = async (
   conversationId: string | number,
@@ -14,8 +12,8 @@ export const uploadChatImage = async (
     type: image.type,
   } as any)
 
-  const res = await axios.post(
-    `${API_URL}/api/chats/conversations/${conversationId}/upload_image/`,
+  const res = await api.post(
+    `/chats/conversations/${conversationId}/upload_image/`,
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   )

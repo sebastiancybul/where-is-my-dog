@@ -1,7 +1,7 @@
 import { Image, Pressable, ScrollView, Text, View, Alert, Modal, ActivityIndicator } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router"
-import axios from "axios";
+import { api } from '@/utils/api';
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
 import { useListing } from "@/contexts/ListingContext";
@@ -31,8 +31,6 @@ const Details = () => {
   }, []))
 	const router = useRouter();
 
-	const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
   const handleDelete = () => {
     Alert.alert(
       "Delete Listing",
@@ -46,7 +44,7 @@ const Details = () => {
             setDeleteError('');
             try {
               setIsDeleting(true);
-              await axios.delete(`${API_URL}/api/listings/${id}/`, {
+              await api.delete(`/listings/${id}/`, {
                 headers: { Authorization: `Bearer ${authState.token}` },
               });
               setDeleteSuccess(true);
@@ -75,7 +73,7 @@ const Details = () => {
             setMarkResolvedError('');
             try{
               setIsMarkingAsResolved(true);
-              await axios.post(`${API_URL}/api/listings/${id}/mark_found/`, {
+              await api.post(`/listings/${id}/mark_found/`, {
                 headers: {Authorization: `Bearer ${authState.token}` },
               });
               setMarkResolvedSuccess(true);
@@ -95,7 +93,7 @@ const Details = () => {
     if (!authState.user || !listingData) return
     try {
       setIsStartingChat(true)
-      const res = await axios.post(`${API_URL}/api/chats/conversations/`, {
+      const res = await api.post(`/chats/conversations/`, {
         user_id: listingData.user.id,
         listing_id: id,
       })
@@ -112,7 +110,7 @@ const Details = () => {
     if (!convId) return
     try {
       setIsJoiningGroup(true)
-      await axios.post(`${API_URL}/api/chats/conversations/${convId}/join/`)
+      await api.post(`/chats/conversations/${convId}/join/`)
       router.push({
         pathname: '/chat/[id]',
         params: {
@@ -131,7 +129,7 @@ const Details = () => {
   const handleBump = async () => {
     try {
       setIsBumping(true)
-      await axios.post(`${API_URL}/api/listings/${id}/bump/`)
+      await api.post(`/listings/${id}/bump/`)
       await refetch()
       setIsMenuOpen(false)
     } catch (e) {

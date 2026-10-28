@@ -2,10 +2,8 @@ import { View, Text, ScrollView, ActivityIndicator, Pressable, RefreshControl } 
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
+import { api } from '@/utils/api';
 import ListingCard, { ListingCardItem } from "@/components/ListingCard";
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 interface ProfileUser {
   id: number;
@@ -54,7 +52,7 @@ const ProfileScreen = ({ user, onLogout }: ProfileScreenProps) => {
   const fetchUserListings = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/api/listings/`, {
+        const response = await api.get(`/listings/`, {
           params: { user: user.id }
         });
         setListings(response.data.results);

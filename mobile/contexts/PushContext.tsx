@@ -1,11 +1,9 @@
 import React, { createContext, useContext, useEffect, ReactNode } from 'react'
 import { Platform, PermissionsAndroid } from 'react-native'
 import { useRouter } from 'expo-router'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging'
 import { useAuth } from '@/contexts/AuthContext'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 interface PushContextType {}
 
@@ -62,7 +60,7 @@ export const PushProvider = ({ children }: { children: ReactNode }) => {
         const token = await getToken(messaging)
         if (cancelled) return
 
-        await axios.post(`${API_URL}/api/notifications/devices/`, {
+        await api.post(`/notifications/devices/`, {
           token,
           platform: 'android',
         })
@@ -70,7 +68,7 @@ export const PushProvider = ({ children }: { children: ReactNode }) => {
         unsubs.push(
           onTokenRefresh(messaging, async (newToken) => {
             try {
-              await axios.post(`${API_URL}/api/notifications/devices/`, {
+              await api.post(`/notifications/devices/`, {
                 token: newToken,
                 platform: 'android',
               })

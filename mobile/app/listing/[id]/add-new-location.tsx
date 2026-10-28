@@ -1,7 +1,7 @@
 import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, Modal, KeyboardAvoidingView } from 'react-native';
 import React, { useState } from 'react';
 import { useLocalSearchParams, useRouter } from "expo-router";
-import axios from 'axios';
+import { api } from '@/utils/api';
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 
 import LocationPicker from "@/components/LocationPicker";
@@ -25,8 +25,6 @@ const AddNewLocation = () => {
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
   const initialCenter = listingData?.primary_location
     ? {
         latitude: parseFloat(listingData.primary_location.latitude),
@@ -39,7 +37,7 @@ const AddNewLocation = () => {
     setError('');
     try {
       setIsSubmitting(true);
-      await axios.post(`${API_URL}/api/listings/${id}/location/`, {
+      await api.post(`/listings/${id}/location/`, {
         point: {
           type: 'Point',
           coordinates: [

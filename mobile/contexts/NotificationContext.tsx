@@ -1,10 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import { AppState, AppStateStatus } from 'react-native'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationEventMap, NotificationEventType } from '@/types/notifications'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL
 const HEARTBEAT_MS = 30000
 
@@ -52,7 +51,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     if (wsRef.current || intentionalCloseRef.current) return
 
     try {
-      const res = await axios.post(`${API_URL}/api/chats/ws-ticket/`)
+      const res = await api.post(`/chats/ws-ticket/`)
       if (wsRef.current || intentionalCloseRef.current) return
       const ticket = res.data.ticket
       const ws = new WebSocket(`${WS_URL}/ws/notifications/?ticket=${ticket}`)

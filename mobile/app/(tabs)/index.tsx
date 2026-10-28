@@ -7,7 +7,7 @@ import { useLocation } from '@/contexts/LocationContext'
 import { INBOX_EVENT_TYPES } from '@/types/notifications'
 import { Ionicons } from '@expo/vector-icons';
 import ListingCard, { ListingCardItem } from "@/components/ListingCard";
-import axios from "axios";
+import { api } from '@/utils/api';
 import { COLOR_OPTIONS, GENDER_OPTIONS, SIZE_OPTIONS } from "@/constants/dogOptions";
 import BreedPicker from "@/components/BreedPicker";
 import ListingCardSkeleton from "@/components/skeletons/ListingCardSkeleton";
@@ -52,8 +52,6 @@ const Index = () => {
 
   const listRef = useRef<FlatList>(null);
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
   const router = useRouter();
   const { authState } = useAuth();
   const { subscribe } = useNotifications();
@@ -63,8 +61,8 @@ const Index = () => {
   useFocusEffect(
     useCallback(() => {
       if (!authState.isAuthenticated) return;
-      axios
-        .get(`${API_URL}/api/notifications/unread-count/`)
+      api
+        .get(`/notifications/unread-count/`)
         .then((res) => setUnreadCount(res.data.count))
         .catch(() => {});
     }, [authState.isAuthenticated])
@@ -116,7 +114,7 @@ const Index = () => {
   const fetchListings = async() => {
     try {
       setLoading(true);
-      const response = await axios.get<ListingsResponse>(`${API_URL}/api/listings/nearby/`, {
+      const response = await api.get<ListingsResponse>(`/listings/nearby/`, {
         params: {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
