@@ -125,7 +125,7 @@ Natural extensions that were scoped out of the MVP:
 
 ## 6. Project Structure
 
-**Backend** — Django project with five apps. Only the architecturally notable files are highlighted:
+**Backend** — Django project with four apps. Only the architecturally notable files are highlighted:
 
 ```
 backend/
@@ -161,7 +161,7 @@ mobile/
 ├── contexts/             # AuthContext, ListingContext, LocationContext,
 │                         #   NotificationContext (WS), PushContext (FCM)
 ├── components/           # Reusable UI
-├── utils/                # API client & helpers
+├── utils/                # Helpers (chat photo upload, dates, image picker)
 ├── types/                # Shared TypeScript types
 └── constants/
 ```
