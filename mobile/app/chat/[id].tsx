@@ -4,7 +4,7 @@ import {
   ActivityIndicator, KeyboardAvoidingView, Platform, Modal, Image, Alert,
 } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/contexts/AuthContext'
 import { Message, PickedImage, WsIncomingMessage } from '@/types/chat'
@@ -12,7 +12,6 @@ import { pickFromLibrary, takePhoto } from '@/utils/imagePicker'
 import { uploadChatImage } from '@/utils/chatApi'
 import MessageBubble from '@/components/chat/MessageBubble'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 const WS_URL = process.env.EXPO_PUBLIC_WS_URL
 
 const ConversationScreen = () => {
@@ -40,7 +39,7 @@ const ConversationScreen = () => {
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/chats/conversations/${id}/messages/`);
+      const res = await api.get(`/chats/conversations/${id}/messages/`);
       const data = res.data.results ?? res.data;
       setMessages(data);
     } finally {
@@ -50,7 +49,7 @@ const ConversationScreen = () => {
 
   const fetchConversation = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/chats/conversations/${id}/`);
+      const res = await api.get(`/chats/conversations/${id}/`);
       setListingId(res.data.listing_id ?? null);
       setFetchedTitle(res.data.listing_title ?? '');
       setFetchedUsername(res.data.other_participant?.username ?? '');
@@ -64,7 +63,7 @@ const ConversationScreen = () => {
 
   const connectWs = async () => {
     try {
-      const res = await axios.post(`${API_URL}/api/chats/ws-ticket/`);
+      const res = await api.post(`/chats/ws-ticket/`);
       const ticket = res.data.ticket;
       const ws = new WebSocket(`${WS_URL}/ws/chats/${id}/?ticket=${ticket}`);
       wsRef.current = ws;

@@ -2,11 +2,9 @@ import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-nativ
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useState } from 'react'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
 import ConfirmModal from '@/components/ConfirmModal'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export default function DeleteAccount() {
   const router = useRouter()
@@ -23,7 +21,7 @@ export default function DeleteAccount() {
     setErrors({})
     setLoading(true)
     try {
-      await axios.post(`${API_URL}/api/settings/account/delete/`, { password })
+      await api.post(`/settings/account/delete/`, { password })
       await onLogout()
       router.replace('/(tabs)/profile')
     } catch (e: any) {

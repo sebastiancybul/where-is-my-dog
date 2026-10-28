@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { ListingItem } from "@/types/listing";
-import axios from 'axios'
-
+import { api } from '@/utils/api'
 interface ListingContextType {
   listing: ListingItem | undefined;
   loading: boolean;
@@ -14,12 +13,10 @@ export const ListingProvider = ({ id, children }: {id: string, children: ReactNo
   const [listing, setListing] = useState<ListingItem>();
   const [loading, setLoading] = useState(false);
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
   const fetchListing = async () => {
     try{
       setLoading(true)
-      const response = await axios.get<ListingItem>(`${API_URL}/api/listings/${id}/`)
+      const response = await api.get<ListingItem>(`/listings/${id}/`)
       setListing(response.data)
     } catch (e) {
       console.log('Failed to fetch listing', e)

@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { FontAwesome5 } from "@expo/vector-icons"
 import { ListingCreate, LocationState, PhotoManage } from "@/types/listingForm"
 import { useAuth } from "@/contexts/AuthContext"
-import axios from 'axios';
+import { api } from '@/utils/api';
 import { useRouter } from "expo-router"
 import FinalStep from "./FinalStep"
 import { ListingItem } from "@/types/listing"
@@ -28,8 +28,6 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
   const { authState } = useAuth();
   const router = useRouter();
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
   const handleUpdateListing = async () => {
     setError('');
     try {
@@ -38,7 +36,7 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
       const headers = { Authorization: `Bearer ${authState.token}` };
 
       // 1. Update listing data
-      await axios.patch(`${API_URL}/api/listings/${listingId}/`, {
+      await api.patch(`/listings/${listingId}/`, {
         ...listingData,
         reward_offered: confirmedReward || '',
       }, { headers });
@@ -46,7 +44,7 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
       // 2. Delete removed photos
       await Promise.all(
         toDeletePhotos.map(photo =>
-          axios.delete(`${API_URL}/api/listings/${listingId}/photos/${photo.id}/`, { headers })
+          api.delete(`/listings/${listingId}/photos/${photo.id}/`, { headers })
         )
       );
 
@@ -64,7 +62,7 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
         const formData = new FormData();
         formData.append('photo', { uri, name: filename, type } as any);
         formData.append('order_index', String(remainingExistingCount + i));
-        await axios.post(`${API_URL}/api/listings/${listingId}/upload_photo/`, formData, {
+        await api.post(`/listings/${listingId}/upload_photo/`, formData, {
           headers: { ...headers, 'Content-Type': 'multipart/form-data' },
         });
       }
@@ -78,11 +76,11 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
           location.radius            !== initialLocation.accuracy_meters;
 
         if (locationChanged) {
-          await axios.delete(
-            `${API_URL}/api/listings/${listingId}/locations/${initialLocation.id}/`,
+          await api.delete(
+            `/listings/${listingId}/locations/${initialLocation.id}/`,
             { headers }
           );
-          await axios.post(`${API_URL}/api/listings/${listingId}/location/`, {
+          await api.post(`/listings/${listingId}/location/`, {
             point: {
               type: 'Point',
               coordinates: [location.coords!.longitude, location.coords!.latitude],

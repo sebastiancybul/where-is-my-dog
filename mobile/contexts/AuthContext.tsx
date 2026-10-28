@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Platform } from 'react-native';
-import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { api, setAuthToken } from '@/utils/api';
 
 interface User {
     id: number;
@@ -43,8 +43,6 @@ interface AuthContextType {
     onUpdateUser: (data: Partial<User>) => void;
 }
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -61,10 +59,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             if(access_token){
 
-                axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+                setAuthToken(access_token);
 
                 try {
-                    const result = await axios.get(`${API_URL}/api/auth/me/`);
+                    const result = await api.get(`/auth/me/`);
                     setAuthState({
                     token: access_token,
                     user: result.data,
@@ -74,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 } catch (e) {
                     await SecureStore.deleteItemAsync('access_token');
                     await SecureStore.deleteItemAsync('refresh_token');
-                    delete axios.defaults.headers.common['Authorization'];
+                    setAuthToken(null);
                     setAuthState({ token: null, user: null, isLoading: false, isAuthenticated: false });
                 }
             } else {
@@ -86,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const register = async (credentials: RegisterCredentials) => {
         try {
-            return await axios.post(`${API_URL}/api/auth/register/`, credentials)
+            return await api.post(`/auth/register/`, credentials)
         } catch (e) {
             const data = (e as any).response?.data;
             if(data){
@@ -100,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const login = async (credentials: LoginCredentials) => {
         try {
-            const result =  await axios.post(`${API_URL}/api/auth/login/`, credentials)
+            const result =  await api.post(`/auth/login/`, credentials)
 
             setAuthState({
                 token: result.data.tokens.access,
@@ -109,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 isAuthenticated: true
             });
 
-            axios.defaults.headers.common['Authorization'] = `Bearer ${result.data.tokens.access}`;
+            setAuthToken(result.data.tokens.access);
 
 
             await SecureStore.setItemAsync('access_token', result.data.tokens.access);
@@ -128,14 +126,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const { getMessaging, getToken } = await import('@react-native-firebase/messaging');
                 const token = await getToken(getMessaging());
-                await axios.delete(`${API_URL}/api/notifications/devices/`, { params: { token } });
+                await api.delete(`/notifications/devices/`, { params: { token } });
             } catch {}
         }
 
         await SecureStore.deleteItemAsync('access_token');
         await SecureStore.deleteItemAsync('refresh_token');
 
-        delete axios.defaults.headers.common['Authorization'];
+        setAuthToken(null);
 
         setAuthState({
             token: null,

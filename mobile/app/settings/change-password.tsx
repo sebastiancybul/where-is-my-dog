@@ -2,10 +2,8 @@ import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-nativ
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useState } from 'react'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import ConfirmModal from '@/components/ConfirmModal'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export default function ChangePassword() {
   const router = useRouter()
@@ -27,7 +25,7 @@ export default function ChangePassword() {
     setErrors({})
     setLoading(true)
     try {
-      await axios.patch(`${API_URL}/api/settings/password/`, { password, new_password: newPassword, new_password2: newPassword2 })
+      await api.patch(`/settings/password/`, { password, new_password: newPassword, new_password2: newPassword2 })
       router.back()
     } catch (e: any) {
       const data = e.response?.data

@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { FontAwesome5 } from "@expo/vector-icons"
 import { ListingCreate, LocationState, PhotoManage } from "@/types/listingForm"
 import { useAuth } from "@/contexts/AuthContext"
-import axios from 'axios';
+import { api } from '@/utils/api';
 import { useRouter } from "expo-router"
 import FinalStep from "./FinalStep"
 
@@ -24,8 +24,6 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
 
   const { authState } = useAuth();
   const router = useRouter();
-
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
   const handleCreateListing = async () => {
     setError('');
@@ -52,7 +50,7 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
         accuracy_meters: location.radius
       }
 
-      const resultListing = await axios.post(`${API_URL}/api/listings/`, listingPayload,
+      const resultListing = await api.post(`/listings/`, listingPayload,
         {
           headers: { Authorization: `Bearer ${authState.token}`}
         })
@@ -60,7 +58,7 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
       const listingId = resultListing.data.id;
       setNewListingId(listingId);
 
-      await axios.post(`${API_URL}/api/listings/${listingId}/location/`, locationPayload, {
+      await api.post(`/listings/${listingId}/location/`, locationPayload, {
         headers: { Authorization: `Bearer ${authState.token}`}
       })
 
@@ -74,7 +72,7 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
         formData.append('photo', {uri, name:filename, type} as any);
         formData.append('order_index', String(i))
 
-        await axios.post(`${API_URL}/api/listings/${listingId}/upload_photo/`, formData,
+        await api.post(`/listings/${listingId}/upload_photo/`, formData,
           {
             headers: {
               Authorization: `Bearer ${authState?.token}`,

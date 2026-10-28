@@ -1,6 +1,6 @@
 import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
-import axios from 'axios';
+import { api } from '@/utils/api';
 import { router } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
 
@@ -15,8 +15,6 @@ const LocationHistory = () => {
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [messagingId, setMessagingId] = useState<number | null>(null);
-
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
   const sortedLocations = [...(listingData?.locations ?? [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -40,8 +38,8 @@ const LocationHistory = () => {
     if (!reporterId) return;
     try {
       setMessagingId(location.id);
-      const res = await axios.post(
-        `${API_URL}/api/chats/conversations/`,
+      const res = await api.post(
+        `/chats/conversations/`,
         { user_id: reporterId, listing_id: listingData?.id },
         { headers: { Authorization: `Bearer ${authState.token}` } }
       );
@@ -66,7 +64,7 @@ const LocationHistory = () => {
           onPress: async () => {
             try {
               setDeletingId(location.id);
-              await axios.delete(`${API_URL}/api/listings/${listingData?.id}/locations/${location.id}/`, {
+              await api.delete(`/listings/${listingData?.id}/locations/${location.id}/`, {
                 headers: { Authorization: `Bearer ${authState.token}` },
               });
               await refetch();

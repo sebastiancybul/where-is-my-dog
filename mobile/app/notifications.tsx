@@ -2,12 +2,10 @@ import React, { useCallback, useState } from 'react'
 import { View, Text, FlatList, ActivityIndicator, Pressable } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { InboxNotification, NotificationsPage } from '@/types/notifications'
 import { formatDateTime } from '@/utils/date'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 const NotificationsScreen = () => {
   const { authState } = useAuth()
@@ -19,8 +17,8 @@ const NotificationsScreen = () => {
   const [error, setError] = useState('')
 
   const fetchPage = async (page: number) => {
-    const res = await axios.get<NotificationsPage>(
-      `${API_URL}/api/notifications/`,
+    const res = await api.get<NotificationsPage>(
+      `/notifications/`,
       { params: { page } }
     )
     return res.data
@@ -66,8 +64,8 @@ const NotificationsScreen = () => {
       setItems((prev) =>
         prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n))
       )
-      axios
-        .post(`${API_URL}/api/notifications/${item.id}/read/`)
+      api
+        .post(`/notifications/${item.id}/read/`)
         .catch(() => {})
     }
     if (item.data.conversation_id) {
@@ -85,7 +83,7 @@ const NotificationsScreen = () => {
 
   const markAllRead = () => {
     setItems((prev) => prev.map((n) => ({ ...n, is_read: true })))
-    axios.post(`${API_URL}/api/notifications/read-all/`).catch(() => {})
+    api.post(`/notifications/read-all/`).catch(() => {})
   }
 
   return (

@@ -2,11 +2,9 @@ import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-nativ
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useState } from 'react'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
 import ConfirmModal from '@/components/ConfirmModal'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export default function EditUsername() {
   const router = useRouter()
@@ -27,7 +25,7 @@ export default function EditUsername() {
     setError(null)
     setLoading(true)
     try {
-      const response = await axios.patch(`${API_URL}/api/settings/profile/`, { username })
+      const response = await api.patch(`/settings/profile/`, { username })
       onUpdateUser(response.data)
       router.back()
     } catch (e: any) {

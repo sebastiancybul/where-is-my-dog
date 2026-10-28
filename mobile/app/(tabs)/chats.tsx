@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
-import axios from 'axios'
+import { api } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
 import { Conversation } from '@/types/chat'
 import ConversationPreview from "@/components/chat/ConversationPreview"
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 const ChatsScreen = () => {
   const {authState} = useAuth();
@@ -22,7 +20,7 @@ const ChatsScreen = () => {
     try {
       setError('');
       if (isRefresh) setRefreshing(true)
-      const res = await axios.get(`${API_URL}/api/chats/conversations/`);
+      const res = await api.get(`/chats/conversations/`);
       setConversations(res.data);
     } catch {
       setError('Could not load coversations.')
