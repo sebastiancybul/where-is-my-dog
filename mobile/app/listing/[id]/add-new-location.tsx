@@ -5,14 +5,12 @@ import { api } from '@/utils/api';
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 
 import LocationPicker from "@/components/LocationPicker";
-import { useAuth } from "@/contexts/AuthContext";
 import { useListing } from "@/contexts/ListingContext";
 import { LocationState } from "@/types/listingForm";
 
 const AddNewLocation = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { authState } = useAuth();
   const { listing: listingData, refetch } = useListing();
 
   const [location, setLocation] = useState<LocationState>({
@@ -50,8 +48,6 @@ const AddNewLocation = () => {
         is_primary: true,
         notes,
         accuracy_meters: location.radius
-      }, {
-        headers: { Authorization: `Bearer ${authState.token}` }
       });
       await refetch();
       setSubmitSuccess(true);

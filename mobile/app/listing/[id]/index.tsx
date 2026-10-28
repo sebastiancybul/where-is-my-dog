@@ -44,9 +44,7 @@ const Details = () => {
             setDeleteError('');
             try {
               setIsDeleting(true);
-              await api.delete(`/listings/${id}/`, {
-                headers: { Authorization: `Bearer ${authState.token}` },
-              });
+              await api.delete(`/listings/${id}/`);
               setDeleteSuccess(true);
             } catch (e) {
               console.log(e);
@@ -73,9 +71,7 @@ const Details = () => {
             setMarkResolvedError('');
             try{
               setIsMarkingAsResolved(true);
-              await api.post(`/listings/${id}/mark_found/`, {
-                headers: {Authorization: `Bearer ${authState.token}` },
-              });
+              await api.post(`/listings/${id}/mark_found/`);
               setMarkResolvedSuccess(true);
             } catch (e) {
               console.log(e);

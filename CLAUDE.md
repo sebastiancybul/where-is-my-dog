@@ -53,7 +53,7 @@ mobile/
 ├── components/                  # reusable UI; manage-listing/ holds the multi-step listing form
 ├── contexts/                    # Auth, Listing, Location, Notification (WebSocket), Push (FCM)
 ├── types/                       # shared TypeScript types
-├── utils/                       # helpers: chatApi (photo upload), date, imagePicker
+├── utils/                       # api (shared axios client), chatApi (photo upload), date, imagePicker
 └── constants/                   # dog options (breeds, colors, ...)
 ```
 
@@ -109,7 +109,8 @@ npx expo start
 
 - The API base URL comes from `EXPO_PUBLIC_API_URL` and the WebSocket URL from `EXPO_PUBLIC_WS_URL`. These are inlined at bundle time, so restart with `npx expo start -c` after changing them.
 - Shared types live in `types/`, React contexts in `contexts/`, helpers in `utils/`.
-- There is no shared API client yet: screens call `axios` directly, and `contexts/AuthContext.tsx` sets the JWT on the global axios defaults.
+- All API calls go through `api` from `utils/api.ts`, with paths relative to `/api` (e.g. `api.get('/listings/')`). Never import `axios` directly in screens.
+- The JWT is set once with `setAuthToken()` (called from `contexts/AuthContext.tsx`). Don't pass `Authorization` headers per request.
 - Place search (Nominatim) is restricted to Poland with `countrycodes=pl`. Keep that restriction.
 - Push notifications need a native dev build (`npx expo run:android`); they don't work in Expo Go.
 

@@ -2,7 +2,6 @@ import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native'
 import React, { useState } from 'react'
 import { FontAwesome5 } from "@expo/vector-icons"
 import { ListingCreate, LocationState, PhotoManage } from "@/types/listingForm"
-import { useAuth } from "@/contexts/AuthContext"
 import { api } from '@/utils/api';
 import { useRouter } from "expo-router"
 import FinalStep from "./FinalStep"
@@ -25,7 +24,6 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<boolean>(false);
 
-  const { authState } = useAuth();
   const router = useRouter();
 
   const handleUpdateListing = async () => {
@@ -33,18 +31,16 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
     try {
       setLoading(true);
 
-      const headers = { Authorization: `Bearer ${authState.token}` };
-
       // 1. Update listing data
       await api.patch(`/listings/${listingId}/`, {
         ...listingData,
         reward_offered: confirmedReward || '',
-      }, { headers });
+      });
 
       // 2. Delete removed photos
       await Promise.all(
         toDeletePhotos.map(photo =>
-          api.delete(`/listings/${listingId}/photos/${photo.id}/`, { headers })
+          api.delete(`/listings/${listingId}/photos/${photo.id}/`)
         )
       );
 
@@ -63,7 +59,7 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
         formData.append('photo', { uri, name: filename, type } as any);
         formData.append('order_index', String(remainingExistingCount + i));
         await api.post(`/listings/${listingId}/upload_photo/`, formData, {
-          headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
 
@@ -77,8 +73,7 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
 
         if (locationChanged) {
           await api.delete(
-            `/listings/${listingId}/locations/${initialLocation.id}/`,
-            { headers }
+            `/listings/${listingId}/locations/${initialLocation.id}/`
           );
           await api.post(`/listings/${listingId}/location/`, {
             point: {
@@ -90,7 +85,7 @@ const EditFinalStep = ({listingData, photos, location, resetForm, confirmedRewar
             is_primary: true,
             notes: '',
             accuracy_meters: location.radius,
-          }, { headers });
+          });
         }
       }
 
