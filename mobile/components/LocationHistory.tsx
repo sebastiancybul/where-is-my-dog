@@ -40,8 +40,7 @@ const LocationHistory = () => {
       setMessagingId(location.id);
       const res = await api.post(
         `/chats/conversations/`,
-        { user_id: reporterId, listing_id: listingData?.id },
-        { headers: { Authorization: `Bearer ${authState.token}` } }
+        { user_id: reporterId, listing_id: listingData?.id }
       );
       router.push(`/chat/${res.data.id}`);
     } catch (e) {
@@ -64,9 +63,7 @@ const LocationHistory = () => {
           onPress: async () => {
             try {
               setDeletingId(location.id);
-              await api.delete(`/listings/${listingData?.id}/locations/${location.id}/`, {
-                headers: { Authorization: `Bearer ${authState.token}` },
-              });
+              await api.delete(`/listings/${listingData?.id}/locations/${location.id}/`);
               await refetch();
             } catch (e) {
               console.log(e);

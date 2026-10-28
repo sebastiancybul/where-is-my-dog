@@ -2,7 +2,6 @@ import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native'
 import React, { useState } from 'react'
 import { FontAwesome5 } from "@expo/vector-icons"
 import { ListingCreate, LocationState, PhotoManage } from "@/types/listingForm"
-import { useAuth } from "@/contexts/AuthContext"
 import { api } from '@/utils/api';
 import { useRouter } from "expo-router"
 import FinalStep from "./FinalStep"
@@ -22,7 +21,6 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
   const [success, setSuccess] = useState<boolean>(false);
   const [newListingId, setNewListingId] = useState<number | null>(null);
 
-  const { authState } = useAuth();
   const router = useRouter();
 
   const handleCreateListing = async () => {
@@ -50,17 +48,12 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
         accuracy_meters: location.radius
       }
 
-      const resultListing = await api.post(`/listings/`, listingPayload,
-        {
-          headers: { Authorization: `Bearer ${authState.token}`}
-        })
+      const resultListing = await api.post(`/listings/`, listingPayload)
 
       const listingId = resultListing.data.id;
       setNewListingId(listingId);
 
-      await api.post(`/listings/${listingId}/location/`, locationPayload, {
-        headers: { Authorization: `Bearer ${authState.token}`}
-      })
+      await api.post(`/listings/${listingId}/location/`, locationPayload)
 
       for (let i=0; i<photos.length; i++) {
         const uri = photos[i].uri;
@@ -74,10 +67,7 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
 
         await api.post(`/listings/${listingId}/upload_photo/`, formData,
           {
-            headers: {
-              Authorization: `Bearer ${authState?.token}`,
-              'Content-Type': 'multipart/form-data',
-            }
+            headers: { 'Content-Type': 'multipart/form-data' }
           }
         )
       }

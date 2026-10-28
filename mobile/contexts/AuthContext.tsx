@@ -100,14 +100,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             const result =  await api.post(`/auth/login/`, credentials)
 
+            setAuthToken(result.data.tokens.access);
+
             setAuthState({
                 token: result.data.tokens.access,
                 user: result.data.user,
                 isLoading: false,
                 isAuthenticated: true
             });
-
-            setAuthToken(result.data.tokens.access);
 
 
             await SecureStore.setItemAsync('access_token', result.data.tokens.access);
