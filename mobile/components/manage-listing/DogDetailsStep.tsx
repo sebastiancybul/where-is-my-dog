@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
 import BreedPicker from "@/components/BreedPicker"
 import { COLOR_OPTIONS } from "@/constants/dogOptions"
-import { ListingCreate } from "@/types/listing"
+import { ListingCreate } from "@/types/listingForm"
 
 type Props = {
   onChange: (data: Partial<ListingCreate>) => void;
