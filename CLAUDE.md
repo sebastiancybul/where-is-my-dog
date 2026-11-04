@@ -121,6 +121,16 @@ npx expo start
 - Commits and PR titles follow Conventional Commits: `type(scope): summary`. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `ci`, `chore`. Scopes: `backend`, `mobile`, `deploy`, or an app name. The PR title becomes the squash commit on `main`.
 - Keep PRs small and focused on one change.
 
+## Autonomous mode
+
+Used when the developer asks Claude to finish a task end to end. The default is still step by step: one file at a time, each change explained.
+
+1. Implement the change.
+2. Backend: delegate tests to the `test-writer` subagent ([.claude/agents/test-writer.md](.claude/agents/test-writer.md)). It runs them in the `backend` container.
+3. Run `flake8`, `npx expo lint` and `npx tsc --noEmit` for the parts that changed.
+4. Delegate review to the `code-reviewer` subagent ([.claude/agents/code-reviewer.md](.claude/agents/code-reviewer.md)). Fix blockers and should-fix findings, then rerun the tests and checks. Mention any nits left unfixed.
+5. Report to the developer: what changed and why, the test and check results, open review findings, and the git commands to run (branch, commit message, PR title and body).
+
 ## Rules
 
 - Write everything in English: code, names, strings, docs.
