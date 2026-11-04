@@ -136,6 +136,7 @@ Used when the developer asks Claude to finish a task end to end. The default is 
 - Write everything in English: code, names, strings, docs.
 - Comments explain why, never what. Add one only for something the code can't say: a business rule, a constraint, a workaround, or a non-obvious decision. Don't restate what the code does, and don't remove existing comments.
 - Never commit secrets: `.env` files and `firebase-service-account.json` stay untracked.
+- Never read `.env` files or `firebase-service-account.json`, with any tool (Read, Bash, git). The `Read` deny rules in `.claude/settings.json` don't cover shell commands.
 - The developer runs every git command that changes state (branch, commit, push, merge). Propose them; don't run them.
 - `manage.py` needs GDAL. Run it inside the `backend` container, or ask the developer to run it.
 
