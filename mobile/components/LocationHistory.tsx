@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useListing } from "@/contexts/ListingContext";
 import { ListingLocation } from "@/types/listing";
 import { formatDateTime } from "@/utils/date";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const LocationHistory = () => {
   const { authState } = useAuth();
@@ -15,6 +16,7 @@ const LocationHistory = () => {
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [messagingId, setMessagingId] = useState<number | null>(null);
+  const [locationToDelete, setLocationToDelete] = useState<ListingLocation | null>(null);
 
   const sortedLocations = [...(listingData?.locations ?? [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -51,30 +53,20 @@ const LocationHistory = () => {
     }
   };
 
-  const handleDelete = (location: ListingLocation) => {
-    Alert.alert(
-      "Delete Location",
-      "Are you sure you want to delete this location report?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setDeletingId(location.id);
-              await api.delete(`/listings/${listingData?.id}/locations/${location.id}/`);
-              await refetch();
-            } catch (e) {
-              console.log(e);
-              Alert.alert('Something went wrong. Please try again.');
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async () => {
+    const location = locationToDelete;
+    setLocationToDelete(null);
+    if (!location) return;
+    try {
+      setDeletingId(location.id);
+      await api.delete(`/listings/${listingData?.id}/locations/${location.id}/`);
+      await refetch();
+    } catch (e) {
+      console.log(e);
+      Alert.alert('Something went wrong. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (sortedLocations.length === 0) return null;
@@ -123,7 +115,7 @@ const LocationHistory = () => {
                 <ActivityIndicator size="small" color="#ef4444" />
               ) : (
                 <Pressable
-                  onPress={() => handleDelete(location)}
+                  onPress={() => setLocationToDelete(location)}
                   disabled={deletingId !== null}
                   className="p-2 active:opacity-60"
                 >
@@ -134,6 +126,16 @@ const LocationHistory = () => {
           </View>
         ))}
       </View>
+
+      <ConfirmModal
+        visible={locationToDelete !== null}
+        title="Delete Location"
+        message="Are you sure you want to delete this location report?"
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setLocationToDelete(null)}
+        destructive
+      />
     </View>
   );
 };
