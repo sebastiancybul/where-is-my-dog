@@ -1,4 +1,4 @@
-import { Image, Pressable, ScrollView, Text, View, Alert, Modal, ActivityIndicator } from 'react-native'
+import { Image, Pressable, ScrollView, Text, View, ActivityIndicator } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router"
 import { api } from '@/utils/api';
@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useListing } from "@/contexts/ListingContext";
 import { DEFAULT_EXPIRY_DAYS } from "@/types/listing";
 import LocationHistory from "@/components/LocationHistory";
+import ConfirmModal from "@/components/ConfirmModal";
 
 
 const Details = () => {
@@ -22,6 +23,8 @@ const Details = () => {
   const [isStartingChat, setIsStartingChat] = useState(false)
   const [isJoiningGroup, setIsJoiningGroup] = useState(false)
   const [isBumping, setIsBumping] = useState(false)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [isResolveConfirmOpen, setIsResolveConfirmOpen] = useState(false)
 
 	const { authState } = useAuth();
   const { listing: listingData, refetch } = useListing()
@@ -31,58 +34,34 @@ const Details = () => {
   }, []))
 	const router = useRouter();
 
-  const handleDelete = () => {
-    Alert.alert(
-      "Delete Listing",
-      "Are you sure you want to delete this listing? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setDeleteError('');
-            try {
-              setIsDeleting(true);
-              await api.delete(`/listings/${id}/`);
-              setDeleteSuccess(true);
-            } catch (e) {
-              console.log(e);
-              setDeleteError('Something went wrong. Please try again.');
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async () => {
+    setIsDeleteConfirmOpen(false);
+    setDeleteError('');
+    try {
+      setIsDeleting(true);
+      await api.delete(`/listings/${id}/`);
+      setDeleteSuccess(true);
+    } catch (e) {
+      console.log(e);
+      setDeleteError('Something went wrong. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const handleMarkAsResolved = () => {
-    Alert.alert(
-      "Mark as resolved",
-      "Are you sure this listing is resolved? It will be moved to your history and closed.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Mark as resolved",
-          style: "default",
-          onPress: async() => {
-            setMarkResolvedError('');
-            try{
-              setIsMarkingAsResolved(true);
-              await api.post(`/listings/${id}/mark_found/`);
-              setMarkResolvedSuccess(true);
-            } catch (e) {
-              console.log(e);
-              setMarkResolvedError('Something went wrong. Please try again.');
-            } finally {
-              setIsMarkingAsResolved(false);
-            }
-          },
-        },
-      ]
-    )
+  const handleMarkAsResolved = async () => {
+    setIsResolveConfirmOpen(false);
+    setMarkResolvedError('');
+    try {
+      setIsMarkingAsResolved(true);
+      await api.post(`/listings/${id}/mark_found/`);
+      setMarkResolvedSuccess(true);
+    } catch (e) {
+      console.log(e);
+      setMarkResolvedError('Something went wrong. Please try again.');
+    } finally {
+      setIsMarkingAsResolved(false);
+    }
   }
 
   const handleMessage = async () => {
@@ -436,7 +415,7 @@ const Details = () => {
                 </Pressable>
               )}
               <Pressable
-                onPress={handleDelete}
+                onPress={() => setIsDeleteConfirmOpen(true)}
                 className="flex-row items-center gap-3 px-5 py-4 active:bg-red-50"
               >
                 <Ionicons name="trash-outline" size={20} color="#ef4444" />
@@ -453,7 +432,7 @@ const Details = () => {
               )}
               {listingData?.status === 'active' && (
                 <Pressable
-                  onPress={handleMarkAsResolved}
+                  onPress={() => setIsResolveConfirmOpen(true)}
                   className="flex-row items-center gap-3 px-5 py-4 active:bg-green-50"
                 >
                   <Ionicons name="checkmark-circle-outline" size={20} color="#16a34a" />
@@ -489,8 +468,9 @@ const Details = () => {
 				</View>
 			)}
 
-			<Modal visible={isDeleting || deleteSuccess || isMarkingAsResolved || markResolvedSuccess} transparent animationType="fade">
-				<View className="flex-1 justify-center items-center bg-black/50 px-6">
+			{/* An overlay rather than a Modal: iOS can't present a Modal while ConfirmModal is still dismissing. */}
+			{(isDeleting || deleteSuccess || isMarkingAsResolved || markResolvedSuccess) && (
+				<View className="absolute inset-0 justify-center items-center bg-black/50 px-6">
 					<View className="bg-white w-full rounded-2xl p-6 items-center gap-3">
 
 						{isDeleting ? (
@@ -540,8 +520,26 @@ const Details = () => {
 
 					</View>
 				</View>
-			</Modal>
-      
+			)}
+
+      <ConfirmModal
+        visible={isDeleteConfirmOpen}
+        title="Delete Listing"
+        message="Are you sure you want to delete this listing? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        destructive
+      />
+
+      <ConfirmModal
+        visible={isResolveConfirmOpen}
+        title="Mark as resolved"
+        message="Are you sure this listing is resolved? It will be moved to your history and closed."
+        confirmLabel="Mark as resolved"
+        onConfirm={handleMarkAsResolved}
+        onCancel={() => setIsResolveConfirmOpen(false)}
+      />
 		</View>
 	)
 }
