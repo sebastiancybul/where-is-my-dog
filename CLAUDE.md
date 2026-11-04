@@ -11,7 +11,7 @@ Mobile platform that reunites lost dogs with their owners: lost/found listings, 
 ├── docs/                        # user stories, models.png, asyncapi.yaml (WebSocket contract)
 ├── .github/workflows/ci.yml     # flake8 + Django tests, expo lint + tsc
 ├── docker-compose.yml           # local stack: db, redis, backend, celery, celery-beat
-└── render.yaml                  # production deploy (with backend/start.sh)
+└── render.yaml                  # production deploy (with backend/start.sh); DB on Neon
 ```
 
 Backend: four apps. Each app has `models.py`, serializers, views, `schemas.py`, `urls.py` and `tests/`; serializers and views are packages in the bigger apps and single modules in `notifications`. The tree lists only the notable files.
@@ -152,4 +152,4 @@ Used when the developer asks Claude to finish a task end to end. The default is 
 - Push notifications are only sent if a Celery worker is running. Check it first when push doesn't arrive.
 - Presence: the app sends a heartbeat every 30s, and the server TTL is 90s. Don't tighten these values; offline is detected through WebSocket disconnect, and the TTL is only a backstop.
 - Production on Render runs Celery in eager mode (no separate worker or beat), so scheduled tasks don't run there.
-- The free Render Postgres expires after 30 days and has to be recreated.
+- Production Postgres is on Neon, not Render (the free Render Postgres is deleted after 30 days). `DATABASE_URL` is set by hand in the Render dashboard.
