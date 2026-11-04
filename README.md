@@ -72,7 +72,8 @@ The API is deployed on Render (free tier):
 
 **Infrastructure**
 - Docker / Docker Compose (full local stack)
-- Render — web service (Docker), managed PostgreSQL, Redis
+- Render — web service (Docker), Redis
+- Neon — serverless PostgreSQL + PostGIS
 - Cloudinary — photo storage & transformation
 - Firebase Cloud Messaging — push notifications
 
