@@ -43,13 +43,16 @@ class ListingListSerializer(serializers.ModelSerializer):
         """
         Returns the primary (most recent) location for this listing.
         """
-        primary = obj.locations.filter(is_primary=True).first()
+        if hasattr(obj, "primary_locations"):
+            primary = next(iter(obj.primary_locations), None)
+        else:
+            primary = obj.locations.filter(is_primary=True).first()
         if primary:
             return primary.address
         return None
 
     def get_primary_photo(self, obj):
-        photo = obj.photos.order_by("order_index").first()
+        photo = next(iter(obj.photos.all()), None)
         if photo:
             return photo.thumbnail_url
         return None
@@ -112,7 +115,9 @@ class ListingSerializer(serializers.ModelSerializer):
         """
         Returns the primary (most recent) location for this listing.
         """
-        primary = obj.locations.filter(is_primary=True).first()
+        primary = next(
+            (loc for loc in obj.locations.all() if loc.is_primary), None
+        )
         if primary:
             return LocationSerializer(primary).data
         return None
@@ -121,7 +126,7 @@ class ListingSerializer(serializers.ModelSerializer):
         """
         Returns the total number of photos for this listing.
         """
-        return obj.photos.count()
+        return len(obj.photos.all())
 
     def validate_search_radius_km(self, value):
         """
@@ -135,6 +140,8 @@ class ListingSerializer(serializers.ModelSerializer):
         return value
 
     def get_public_conversation(self, obj):
+        if hasattr(obj, "public_conversations"):
+            return next(iter(obj.public_conversations), None)
         return obj.conversations.filter(type=Conversation.TYPE_PUBLIC).first()
 
     def get_public_conversation_id(self, obj):

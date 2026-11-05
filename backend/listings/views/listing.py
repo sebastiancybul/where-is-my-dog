@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, filters, status
@@ -46,6 +47,34 @@ from notifications.dispatch import dispatch_notification
 from notifications.models import Notification
 
 
+def list_prefetches():
+    return [
+        "photos",
+        Prefetch(
+            "locations",
+            queryset=Location.objects.filter(is_primary=True),
+            to_attr="primary_locations",
+        ),
+    ]
+
+
+def detail_prefetches():
+    return [
+        "photos",
+        Prefetch(
+            "locations",
+            queryset=Location.objects.select_related("added_by_user"),
+        ),
+        Prefetch(
+            "conversations",
+            queryset=Conversation.objects.filter(
+                type=Conversation.TYPE_PUBLIC
+            ),
+            to_attr="public_conversations",
+        ),
+    ]
+
+
 @listing_viewset_schema
 class ListingViewSet(viewsets.ModelViewSet):
     """
@@ -73,6 +102,16 @@ class ListingViewSet(viewsets.ModelViewSet):
         if self.action in ("list", "nearby"):
             return ListingListSerializer
         return ListingSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action in ("list", "nearby"):
+            return queryset.prefetch_related(*list_prefetches())
+        if self.action == "retrieve":
+            return queryset.select_related("user").prefetch_related(
+                *detail_prefetches()
+            )
+        return queryset
 
     @mark_found_schema
     @action(detail=True, methods=["post"])
@@ -335,6 +374,9 @@ class ListingViewSet(viewsets.ModelViewSet):
         similar_listings = detector.find_similar_listings(
             listing_data=validated_data, listing_type=search_type
         )
+        similar_listings = similar_listings.select_related(
+            "user"
+        ).prefetch_related(*detail_prefetches())
 
         return Response(
             ListingSerializer(similar_listings, many=True).data,
