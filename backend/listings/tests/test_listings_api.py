@@ -2,18 +2,23 @@
 Tests for the listings API
 """
 
+import io
+import os
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.gis.geos import Point
+from PIL import Image
 
-from listings.models import Listing, Location
+from listings.models import Listing, Location, Photo
 from notifications.models import Notification
 
 LISTINGS_URL = reverse("listing-list")
@@ -106,6 +111,32 @@ def create_listing(user, point=None, **params):
     )
 
     return listing
+
+
+FAKE_UPLOAD = {
+    "secure_url": "https://cdn.example.com/listings/photos/p.jpg",
+    "public_id": "listings/photos/p",
+    "bytes": 1234,
+    "width": 10,
+    "height": 10,
+}
+
+
+def jpeg_file(size=(10, 10), noise=False, name="photo.jpg"):
+    """
+    Return an in-memory JPEG upload. With noise=True the pixels are random,
+    so the JPEG barely compresses and its byte size is predictable.
+    """
+    width, height = size
+    if noise:
+        image = Image.frombytes("RGB", size, os.urandom(width * height * 3))
+    else:
+        image = Image.new("RGB", size, "red")
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG", quality=95)
+    return SimpleUploadedFile(
+        name, buffer.getvalue(), content_type="image/jpeg"
+    )
 
 
 class PublicListingsApiTests(APITestCase):
@@ -550,3 +581,148 @@ class BumpListingTests(APITestCase):
         res = self.client.post(bump_url(self.listing.id))
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+@patch("cloudinary.uploader.destroy")
+@patch("cloudinary.uploader.upload", return_value=FAKE_UPLOAD)
+class PhotoUploadTests(APITestCase):
+    """Tests for the upload_photo action"""
+
+    def setUp(self):
+        self.user = create_user(username="owner", email="owner@example.com")
+        self.other_user = create_user(
+            username="stranger", email="stranger@example.com"
+        )
+        self.client.force_authenticate(user=self.user)
+        self.listing = create_listing(self.user, title="My Dog")
+        self.url = upload_photo_url(self.listing.id)
+
+    def test_upload_small_jpeg_success(self, mock_upload, mock_destroy):
+        res = self.client.post(
+            self.url, {"photo": jpeg_file()}, format="multipart"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        mock_upload.assert_called_once()
+        photo = Photo.objects.get()
+        self.assertEqual(photo.listing, self.listing)
+        self.assertEqual(photo.cloudinary_public_id, FAKE_UPLOAD["public_id"])
+        mock_destroy.assert_not_called()
+
+    def test_upload_jpeg_stored_as_temp_file_success(
+        self, mock_upload, _mock_destroy
+    ):
+        """
+        Regression: files above FILE_UPLOAD_MAX_MEMORY_SIZE are written to
+        a temp file, which used to crash request.data.copy() with a 500.
+        """
+        photo = jpeg_file(size=(1800, 1800), noise=True)
+        self.assertGreater(photo.size, settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
+        self.assertLess(photo.size, 5 * 1024 * 1024)
+
+        res = self.client.post(self.url, {"photo": photo}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        mock_upload.assert_called_once()
+        self.assertEqual(self.listing.photos.count(), 1)
+
+    def test_upload_over_5mb_fails(self, mock_upload, _mock_destroy):
+        photo = jpeg_file()
+        oversized = SimpleUploadedFile(
+            "photo.jpg",
+            photo.read() + b"\0" * (5 * 1024 * 1024),
+            content_type="image/jpeg",
+        )
+
+        res = self.client.post(
+            self.url, {"photo": oversized}, format="multipart"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("File size too large", str(res.data["photo"][0]))
+        mock_upload.assert_not_called()
+        self.assertEqual(Photo.objects.count(), 0)
+
+    def test_upload_invalid_file_fails(self, mock_upload, _mock_destroy):
+        fake = SimpleUploadedFile(
+            "photo.jpg", b"not-an-image", content_type="image/jpeg"
+        )
+
+        res = self.client.post(self.url, {"photo": fake}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("photo", res.data)
+        mock_upload.assert_not_called()
+        self.assertEqual(Photo.objects.count(), 0)
+
+    def test_upload_ignores_client_listing_field(
+        self, _mock_upload, _mock_destroy
+    ):
+        """The listing comes from the URL, never from the request body"""
+        other_listing = create_listing(self.other_user, title="Not Mine")
+
+        res = self.client.post(
+            self.url,
+            {"photo": jpeg_file(), "listing": other_listing.id},
+            format="multipart",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(self.listing.photos.count(), 1)
+        self.assertEqual(other_listing.photos.count(), 0)
+
+    def test_upload_to_other_user_listing_fails(
+        self, mock_upload, _mock_destroy
+    ):
+        other_listing = create_listing(self.other_user, title="Not Mine")
+
+        res = self.client.post(
+            upload_photo_url(other_listing.id),
+            {"photo": jpeg_file()},
+            format="multipart",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        mock_upload.assert_not_called()
+        self.assertEqual(Photo.objects.count(), 0)
+
+    def test_upload_third_photo_fails(self, mock_upload, _mock_destroy):
+        for index in range(2):
+            Photo.objects.create(
+                listing=self.listing,
+                cloudinary_url=f"listings/photos/p{index}",
+                cloudinary_public_id=f"listings/photos/p{index}",
+            )
+
+        res = self.client.post(
+            self.url, {"photo": jpeg_file()}, format="multipart"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "A listing can have a maximum of two photos.",
+            str(res.data["non_field_errors"][0]),
+        )
+        mock_upload.assert_not_called()
+        self.assertEqual(self.listing.photos.count(), 2)
+
+    def test_db_failure_destroys_uploaded_photo(
+        self, mock_upload, mock_destroy
+    ):
+        """A failed DB write must not leave an orphan file on Cloudinary"""
+        self.client.raise_request_exception = False
+
+        with patch(
+            "listings.serializers.photo.Photo.objects.create",
+            side_effect=RuntimeError("db down"),
+        ):
+            res = self.client.post(
+                self.url, {"photo": jpeg_file()}, format="multipart"
+            )
+
+        self.assertEqual(
+            res.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+        mock_upload.assert_called_once()
+        mock_destroy.assert_called_once_with(FAKE_UPLOAD["public_id"])
+        self.assertEqual(Photo.objects.count(), 0)

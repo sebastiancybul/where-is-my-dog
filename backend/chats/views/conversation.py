@@ -1,9 +1,11 @@
 import json
+import logging
 
 import cloudinary.uploader
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
@@ -24,7 +26,11 @@ from chats.models import (
 )
 from chats.pagination import MessagePagination
 from chats.permissions import IsConversationMember, IsListingOwner
-from chats.serializers import ConversationSerializer, MessageSerializer
+from chats.serializers import (
+    ChatImageUploadSerializer,
+    ConversationSerializer,
+    MessageSerializer,
+)
 from chats.schemas import (
     archive_schema,
     close_schema,
@@ -37,6 +43,7 @@ from chats.schemas import (
 from chats.tickets import generate_ticket
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 @conversation_viewset_schema
@@ -222,12 +229,9 @@ class ConversationViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        image = request.FILES.get("image")
-        if not image:
-            return Response(
-                {"image": "This field is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = ChatImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        image = serializer.validated_data["image"]
 
         try:
             result = cloudinary.uploader.upload(
@@ -239,14 +243,24 @@ class ConversationViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        message = Message.objects.create(
-            conversation=conversation, sender=request.user, body=""
-        )
-        photo = MessagePhoto.objects.create(
-            message=message,
-            image=result["secure_url"],
-            cloudinary_public_id=result["public_id"],
-        )
+        try:
+            with transaction.atomic():
+                message = Message.objects.create(
+                    conversation=conversation, sender=request.user, body=""
+                )
+                photo = MessagePhoto.objects.create(
+                    message=message,
+                    image=result["secure_url"],
+                    cloudinary_public_id=result["public_id"],
+                )
+        except Exception:
+            try:
+                cloudinary.uploader.destroy(result["public_id"])
+            except Exception:
+                logger.exception(
+                    "Failed to delete orphaned image %s", result["public_id"]
+                )
+            raise
 
         async_to_sync(get_channel_layer().group_send)(
             f"chat_{conversation.pk}",

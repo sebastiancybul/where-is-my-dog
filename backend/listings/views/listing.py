@@ -181,13 +181,12 @@ class ListingViewSet(viewsets.ModelViewSet):
         """
         listing = self.get_object()
 
-        data = request.data.copy()
-        data["listing"] = listing.id
-
-        serializer = PhotoUploadSerializer(data=data)
+        serializer = PhotoUploadSerializer(
+            data=request.data, context={"listing": listing}
+        )
         serializer.is_valid(raise_exception=True)
 
-        photo = serializer.save()
+        photo = serializer.save(listing=listing)
 
         return Response(
             PhotoSerializer(photo).data, status=status.HTTP_201_CREATED

@@ -1,8 +1,13 @@
+import logging
+
 from rest_framework import serializers
 from ..models import Photo
+from ..validators import validate_image
 
 import cloudinary.uploader
 from cloudinary import CloudinaryImage
+
+logger = logging.getLogger(__name__)
 
 
 class PhotoSerializer(serializers.ModelSerializer):
@@ -40,7 +45,9 @@ class PhotoUploadSerializer(serializers.ModelSerializer):
     Handles Cloudinary upload and thumbnail generation.
     """
 
-    photo = serializers.ImageField(write_only=True)
+    photo = serializers.FileField(
+        write_only=True, validators=[validate_image]
+    )
 
     class Meta:
         model = Photo
@@ -59,6 +66,7 @@ class PhotoUploadSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "listing",
             "cloudinary_url",
             "cloudinary_public_id",
             "thumbnail_url",
@@ -68,36 +76,13 @@ class PhotoUploadSerializer(serializers.ModelSerializer):
             "uploaded_at",
         ]
 
-    def validate_photo(self, value):
-        """
-        Validate uploaded photo:
-        - File size (max 5MB)
-        - File type (only JPEG, PNG, WebP)
-        """
-
-        max_size = 5 * 1024 * 1024
-        if value.size > max_size:
-            raise serializers.ValidationError(
-                f"File size too large. Maximum size is 5MB. "
-                f"Your file is {value.size / (1024 * 1024):.2f}MB"
-            )
-
-        allowed_types = ["image/jpeg", "image/png", "image/webp"]
-        if value.content_type not in allowed_types:
-            raise serializers.ValidationError(
-                f"Invalid file type. Allowed types: JPEG, PNG, WebP. "
-                f"You uploaded: {value.content_type}"
-            )
-
-        return value
-
     def validate(self, attrs):
         """
         Validate that listing doesn't exceed photo limit.
         """
-        listing = attrs.get("listing")
+        listing = self.context["listing"]
 
-        if listing and listing.photos.count() >= 2:
+        if listing.photos.count() >= 2:
             raise serializers.ValidationError(
                 "A listing can have a maximum of two photos."
             )
@@ -135,7 +120,17 @@ class PhotoUploadSerializer(serializers.ModelSerializer):
         )
         validated_data["thumbnail_url"] = thumbnail_url
 
-        photo = Photo.objects.create(**validated_data)
+        try:
+            photo = Photo.objects.create(**validated_data)
+        except Exception:
+            try:
+                cloudinary.uploader.destroy(upload_result["public_id"])
+            except Exception:
+                logger.exception(
+                    "Failed to delete orphaned image %s",
+                    upload_result["public_id"],
+                )
+            raise
         return photo
 
 

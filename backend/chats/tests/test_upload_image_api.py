@@ -1,8 +1,10 @@
+import io
 from unittest.mock import AsyncMock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -32,8 +34,10 @@ def create_user(**params):
 
 
 def image_file():
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), "red").save(buffer, format="JPEG")
     return SimpleUploadedFile(
-        "photo.jpg", b"fake-image-bytes", content_type="image/jpeg"
+        "photo.jpg", buffer.getvalue(), content_type="image/jpeg"
     )
 
 
@@ -131,3 +135,84 @@ class UploadImageApiTests(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Message.objects.count(), 0)
+
+    @patch("chats.views.conversation.send_push_to_user")
+    @patch("chats.views.conversation.notify_user", new_callable=AsyncMock)
+    @patch("chats.views.conversation.get_channel_layer")
+    @patch("cloudinary.uploader.upload", return_value=FAKE_UPLOAD)
+    def test_invalid_image_returns_400_without_upload(
+        self, mock_upload, mock_layer, mock_notify, mock_push
+    ):
+        mock_layer.return_value.group_send = AsyncMock()
+        self.client.force_authenticate(user=self.user)
+        fake = SimpleUploadedFile(
+            "photo.jpg", b"fake-image-bytes", content_type="image/jpeg"
+        )
+
+        res = self.client.post(self.url, {"image": fake}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("image", res.data)
+        mock_upload.assert_not_called()
+        self.assertEqual(Message.objects.count(), 0)
+        mock_layer.return_value.group_send.assert_not_called()
+        mock_notify.assert_not_called()
+        mock_push.delay.assert_not_called()
+
+    @patch("chats.views.conversation.notify_user", new_callable=AsyncMock)
+    @patch("chats.views.conversation.get_channel_layer")
+    @patch("cloudinary.uploader.upload", return_value=FAKE_UPLOAD)
+    def test_image_over_5mb_returns_400(
+        self, mock_upload, mock_layer, _mock_notify
+    ):
+        mock_layer.return_value.group_send = AsyncMock()
+        self.client.force_authenticate(user=self.user)
+        oversized = SimpleUploadedFile(
+            "photo.jpg",
+            image_file().read() + b"\0" * (5 * 1024 * 1024),
+            content_type="image/jpeg",
+        )
+
+        res = self.client.post(
+            self.url, {"image": oversized}, format="multipart"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("File size too large", str(res.data["image"][0]))
+        mock_upload.assert_not_called()
+        self.assertEqual(Message.objects.count(), 0)
+
+    @patch("chats.views.conversation.send_push_to_user")
+    @patch("chats.views.conversation.notify_user", new_callable=AsyncMock)
+    @patch("chats.views.conversation.get_channel_layer")
+    @patch("cloudinary.uploader.destroy")
+    @patch("cloudinary.uploader.upload", return_value=FAKE_UPLOAD)
+    def test_db_failure_rolls_back_and_destroys_upload(
+        self, mock_upload, mock_destroy, mock_layer, mock_notify, mock_push
+    ):
+        """
+        The Message must not survive without its photo, and the Cloudinary
+        file must not be orphaned.
+        """
+        mock_layer.return_value.group_send = AsyncMock()
+        self.client.force_authenticate(user=self.user)
+        self.client.raise_request_exception = False
+
+        with patch(
+            "chats.views.conversation.MessagePhoto.objects.create",
+            side_effect=RuntimeError("db down"),
+        ):
+            res = self.client.post(
+                self.url, {"image": image_file()}, format="multipart"
+            )
+
+        self.assertEqual(
+            res.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+        mock_upload.assert_called_once()
+        mock_destroy.assert_called_once_with(FAKE_UPLOAD["public_id"])
+        self.assertEqual(Message.objects.count(), 0)
+        self.assertEqual(MessagePhoto.objects.count(), 0)
+        mock_layer.return_value.group_send.assert_not_called()
+        mock_notify.assert_not_called()
+        mock_push.delay.assert_not_called()

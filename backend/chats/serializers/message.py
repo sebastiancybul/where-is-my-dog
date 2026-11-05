@@ -1,6 +1,11 @@
 from rest_framework import serializers
 
 from chats.models import Message, MessagePhoto
+from listings.validators import validate_image
+
+
+class ChatImageUploadSerializer(serializers.Serializer):
+    image = serializers.FileField(validators=[validate_image])
 
 
 class MessagePhotoSerializer(serializers.ModelSerializer):
