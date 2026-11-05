@@ -54,7 +54,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       const res = await api.post(`/chats/ws-ticket/`)
       if (wsRef.current || intentionalCloseRef.current) return
       const ticket = res.data.ticket
-      const ws = new WebSocket(`${WS_URL}/ws/notifications/?ticket=${ticket}`)
+      const ws = new WebSocket(`${WS_URL}/ws/v1/notifications/?ticket=${ticket}`)
       wsRef.current = ws
 
       ws.onopen = () => {

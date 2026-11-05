@@ -30,8 +30,8 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
-    path("api/", include("users.urls")),
-    path("api/", include("listings.urls")),
-    path("api/chats/", include("chats.urls")),
-    path("api/notifications/", include("notifications.urls")),
+    path("api/v1/", include("users.urls")),
+    path("api/v1/", include("listings.urls")),
+    path("api/v1/chats/", include("chats.urls")),
+    path("api/v1/notifications/", include("notifications.urls")),
 ]

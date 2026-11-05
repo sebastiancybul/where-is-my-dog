@@ -27,7 +27,7 @@ Django + DRF + Channels backend (`backend/`), Expo React Native + TypeScript app
 - Non-chat notifications go through `notifications.dispatch.dispatch_notification`, not the push or WebSocket helpers directly.
 - When WebSocket messages change, `docs/asyncapi.yaml` is updated in the same PR.
 - A PR must not modify existing migration files; it may only add new ones. Model changes include their new migration.
-- Versioning: the API is moving to `/api/v1/` and `/ws/v1/`; until then routes live under `/api/` and `/ws/`. Additive changes go into the current version; breaking changes (removed or renamed field or endpoint, changed type or meaning) need a new version.
+- Versioning: the current version is `v1`, with REST under `/api/v1/` and WebSockets under `/ws/v1/`. Additive changes go into the current version; breaking changes (removed or renamed field or endpoint, changed type or meaning) need a new version.
 - Secrets: `.env` files and `firebase-service-account.json` must never appear in a diff. Settings come from environment variables.
 - Presence: heartbeat 30s, TTL 90s. Don't tighten them; offline is detected through WebSocket disconnect.
 - Production runs Celery in eager mode (no beat). Flag code that relies on scheduled tasks in production.
