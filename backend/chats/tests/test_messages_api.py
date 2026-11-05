@@ -135,6 +135,22 @@ class MessagesApiTests(APITestCase):
         )
         self.assertLess(newest_on_second, oldest_on_first)
 
+    def test_equal_timestamps_are_paged_by_id_without_overlap(self):
+        messages = create_messages(self.conversation, self.user, 45)
+        Message.objects.filter(conversation=self.conversation).update(
+            created_at=timezone.now()
+        )
+        self.client.force_authenticate(user=self.user)
+
+        first = self.client.get(self.url)
+        second = self.client.get(self.url, {"page": 2})
+
+        returned_ids = [
+            m["id"] for m in first.data["results"] + second.data["results"]
+        ]
+        expected_ids = sorted((m.pk for m in messages), reverse=True)
+        self.assertEqual(returned_ids, expected_ids)
+
     def test_messages_are_ordered_newest_first_across_pages(self):
         create_messages(self.conversation, self.user, 45)
         self.client.force_authenticate(user=self.user)

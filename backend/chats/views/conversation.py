@@ -202,9 +202,9 @@ class ConversationViewSet(viewsets.GenericViewSet):
     def messages(self, request, pk=None):
         conversation = get_object_or_404(self.get_queryset(), pk=pk)
         self.check_object_permissions(request, conversation)
-        qs = conversation.messages.order_by("-created_at").prefetch_related(
-            "photos", "read_statuses"
-        )
+        qs = conversation.messages.order_by(
+            "-created_at", "-id"
+        ).prefetch_related("photos", "read_statuses")
         page = self.paginate_queryset(qs)
         return self.get_paginated_response(
             MessageSerializer(page, many=True).data
