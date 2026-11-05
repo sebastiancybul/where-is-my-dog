@@ -26,7 +26,10 @@ class ConversationSerializer(serializers.ModelSerializer):
         ]
 
     def get_last_message(self, obj):
-        message = obj.messages.last()
+        if hasattr(obj, "latest_messages"):
+            message = next(iter(obj.latest_messages), None)
+        else:
+            message = obj.messages.order_by("-created_at", "-id").first()
         if not message:
             return None
         return MessageSerializer(message).data
@@ -37,17 +40,20 @@ class ConversationSerializer(serializers.ModelSerializer):
     def get_listing_photo(self, obj):
         if not obj.listing:
             return None
-        photo = obj.listing.photos.order_by("order_index").first()
+        photo = next(iter(obj.listing.photos.all()), None)
         return photo.thumbnail_url if photo else None
 
     def get_other_participant(self, obj):
         request = self.context.get("request")
         if not request:
             return None
-        other = (
-            obj.memberships.exclude(user=request.user)
-            .select_related("user")
-            .first()
+        other = next(
+            (
+                m
+                for m in obj.memberships.all()
+                if m.user_id != request.user.id
+            ),
+            None,
         )
         if not other:
             return None
