@@ -6,7 +6,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -66,10 +66,30 @@ class ConversationViewSet(viewsets.GenericViewSet):
         return [IsAuthenticated()]
 
     def list(self, request):
+        latest_message = (
+            Message.objects.order_by("-created_at", "-id")
+            .select_related("sender")
+            .prefetch_related("photos", "read_statuses")
+        )
         qs = (
             self.get_queryset()
             .annotate(last_msg_at=Max("messages__created_at"))
             .order_by("-last_msg_at")
+            .select_related("listing")
+            .prefetch_related(
+                "listing__photos",
+                Prefetch(
+                    "memberships",
+                    queryset=ConversationMembership.objects.select_related(
+                        "user"
+                    ).order_by("pk"),
+                ),
+                Prefetch(
+                    "messages",
+                    queryset=latest_message[:1],
+                    to_attr="latest_messages",
+                ),
+            )
         )
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
@@ -209,9 +229,11 @@ class ConversationViewSet(viewsets.GenericViewSet):
     def messages(self, request, pk=None):
         conversation = get_object_or_404(self.get_queryset(), pk=pk)
         self.check_object_permissions(request, conversation)
-        qs = conversation.messages.order_by(
-            "-created_at", "-id"
-        ).prefetch_related("photos", "read_statuses")
+        qs = (
+            conversation.messages.order_by("-created_at", "-id")
+            .select_related("sender")
+            .prefetch_related("photos", "read_statuses")
+        )
         page = self.paginate_queryset(qs)
         return self.get_paginated_response(
             MessageSerializer(page, many=True).data

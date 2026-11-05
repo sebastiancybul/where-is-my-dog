@@ -39,4 +39,4 @@ class MessageSerializer(serializers.ModelSerializer):
         ]
 
     def get_read_by(self, obj):
-        return list(obj.read_statuses.values_list("user_id", flat=True))
+        return [status.user_id for status in obj.read_statuses.all()]
