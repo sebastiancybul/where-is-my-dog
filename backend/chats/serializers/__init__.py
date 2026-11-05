@@ -1,7 +1,12 @@
 from .conversation import ConversationSerializer
-from .message import MessagePhotoSerializer, MessageSerializer
+from .message import (
+    ChatImageUploadSerializer,
+    MessagePhotoSerializer,
+    MessageSerializer,
+)
 
 __all__ = [
+    "ChatImageUploadSerializer",
     "ConversationSerializer",
     "MessageSerializer",
     "MessagePhotoSerializer",

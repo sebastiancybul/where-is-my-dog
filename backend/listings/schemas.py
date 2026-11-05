@@ -172,7 +172,9 @@ upload_photo_schema = extend_schema(
                 OpenApiExample(
                     "Max photos reached",
                     value={
-                        "error": "A listing can have a maximum of 2 photos."
+                        "non_field_errors": [
+                            "A listing can have a maximum of two photos."
+                        ]
                     },
                 ),
                 OpenApiExample(

@@ -122,7 +122,21 @@ upload_image_schema = extend_schema(
     },
     responses={
         201: MessageSerializer,
-        400: OpenApiResponse(description="No image provided"),
+        400: OpenApiResponse(
+            description="Missing, invalid or too large image "
+            "(JPEG, PNG or WebP, max 5MB)",
+            examples=[
+                OpenApiExample(
+                    "File too large",
+                    value={
+                        "image": [
+                            "File size too large. Maximum size is 5MB. "
+                            "Your file is 6.20MB"
+                        ]
+                    },
+                )
+            ],
+        ),
         403: OpenApiResponse(
             description="Conversation is closed or not a member"
         ),
