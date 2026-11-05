@@ -12,7 +12,7 @@ info:
     Before opening a WebSocket connection the client must obtain a **single-use
     ticket**
 
-    from `POST /api/ws-ticket/` (requires a valid session/JWT). The ticket has a
+    from `POST /api/v1/chats/ws-ticket/` (requires a valid session/JWT). The ticket has a
     **30-second TTL**
 
     and must be passed as the `ticket` query parameter when connecting.
@@ -22,7 +22,7 @@ info:
 
     ```
 
-    wss://{host}/ws/chats/{conversationId}/?ticket={ticket}
+    wss://{host}/ws/v1/chats/{conversationId}/?ticket={ticket}
 
     ```
 
@@ -46,7 +46,7 @@ info:
     code `conversation_closed`.
 channels:
   chat:
-    address: '/ws/chats/{conversationId}/'
+    address: '/ws/v1/chats/{conversationId}/'
     description: >
       Bidirectional channel for real-time messaging within a single
       conversation.
@@ -66,7 +66,7 @@ channels:
               type: string
               description: >-
                 Single-use authentication ticket (30 s TTL) from POST
-                /api/ws-ticket/
+                /api/v1/chats/ws-ticket/
     messages:
       sendChatMessage:
         $ref: '#/components/messages/SendChatMessage'
@@ -81,7 +81,7 @@ channels:
       receiveError:
         $ref: '#/components/messages/Error'
   notifications:
-    address: '/ws/notifications/'
+    address: '/ws/v1/notifications/'
     description: >
       Per-user channel for real-time notifications.
 
@@ -99,7 +99,7 @@ channels:
               type: string
               description: >-
                 Single-use authentication ticket (30 s TTL) from POST
-                /api/ws-ticket/
+                /api/v1/chats/ws-ticket/
     messages:
       receiveNotification:
         $ref: '#/components/messages/Notification'

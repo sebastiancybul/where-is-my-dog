@@ -91,7 +91,7 @@ npx expo start
 - Every mutating endpoint checks permissions; owner-only actions use the app's `permissions.py`.
 - Defaults: JWT auth (SimpleJWT), `IsAuthenticatedOrReadOnly`, page-number pagination.
 - Non-chat notifications go through `notifications.dispatch.dispatch_notification`: it persists the notification, sends it over WebSocket if the user is online, and otherwise queues a push. Don't call `notify_user` or the push helpers directly for new notification types.
-- WebSocket clients authenticate with a one-time ticket from `POST /api/chats/ws-ticket/`, passed as `?ticket=`. Never put a JWT in a WebSocket URL.
+- WebSocket clients authenticate with a one-time ticket from `POST /api/v1/chats/ws-ticket/`, passed as `?ticket=`. Never put a JWT in a WebSocket URL.
 - [docs/asyncapi.yaml](docs/asyncapi.yaml) is the WebSocket contract. Update it whenever WebSocket messages change.
 - Tests live in `<app>/tests/test_*.py`. Use `APITestCase` for endpoints and `TestCase` for models and tasks. Build URLs with `reverse()` and route names, never hard-coded paths.
 - Tests never touch external services: mock Cloudinary, FCM and the Redis ticket client with `unittest.mock.patch`, as the existing tests do.
@@ -100,7 +100,7 @@ npx expo start
 
 ## API versioning
 
-- The API is moving to `/api/v1/` (REST) and `/ws/v1/` (WebSockets). Until that lands, routes live under `/api/` and `/ws/`.
+- Current version: `v1`. REST routes live under `/api/v1/` and WebSockets under `/ws/v1/`.
 - Additive changes (new endpoints, new optional fields) go into the current version.
 - Breaking changes (removing or renaming fields or endpoints, changing types or meaning) require a new version.
 - Swagger UI stays at `/api/docs/` and the schema at `/api/schema/`.
@@ -109,7 +109,7 @@ npx expo start
 
 - The API base URL comes from `EXPO_PUBLIC_API_URL` and the WebSocket URL from `EXPO_PUBLIC_WS_URL`. These are inlined at bundle time, so restart with `npx expo start -c` after changing them.
 - Shared types live in `types/`, React contexts in `contexts/`, helpers in `utils/`.
-- All API calls go through `api` from `utils/api.ts`, with paths relative to `/api` (e.g. `api.get('/listings/')`). Never import `axios` directly in screens.
+- All API calls go through `api` from `utils/api.ts`, with paths relative to `/api/v1` (e.g. `api.get('/listings/')`). Never import `axios` directly in screens.
 - The JWT is set once with `setAuthToken()` (called from `contexts/AuthContext.tsx`). Don't pass `Authorization` headers per request.
 - Place search (Nominatim) is restricted to Poland with `countrycodes=pl`. Keep that restriction.
 - Push notifications need a native dev build (`npx expo run:android`); they don't work in Expo Go.

@@ -9,9 +9,9 @@ from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 
-REGISTER_USER_URL = reverse("users:register")  # /api/auth/register
-LOGIN_URL = reverse("users:login")  # /api/auth/login
-CURRENT_USER_URL = reverse("users:current_user")  # /api/auth/me
+REGISTER_USER_URL = reverse("users:register")  # /api/v1/auth/register
+LOGIN_URL = reverse("users:login")  # /api/v1/auth/login
+CURRENT_USER_URL = reverse("users:current_user")  # /api/v1/auth/me
 
 USERNAME = "janek123"
 EMAIL = "test@example.com"

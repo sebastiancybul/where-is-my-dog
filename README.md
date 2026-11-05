@@ -48,7 +48,7 @@ This is the foundation for the "suggest similar listings before you create a new
 
 The API is deployed on Render (free tier):
 
-- **Base URL:** https://wimd-backend.onrender.com
+- **Base URL:** https://wimd-backend.onrender.com (REST under `/api/v1/`, WebSockets under `/ws/v1/`)
 - **Interactive API docs (Swagger):** https://wimd-backend.onrender.com/api/docs/
 
 > ⚠️ Free tier sleeps when idle — the **first request can take ~30–60s** to cold-start. Just retry once and it responds normally.
@@ -203,9 +203,9 @@ sequenceDiagram
     participant API as REST API
     participant WS as WebSocket consumer
 
-    C->>API: POST /api/chats/ws-ticket/ (JWT)
+    C->>API: POST /api/v1/chats/ws-ticket/ (JWT)
     API-->>C: short-lived ticket
-    C->>WS: open ws/chats/{id}/ (?ticket=…)
+    C->>WS: open ws/v1/chats/{id}/ (?ticket=…)
     WS->>WS: middleware validates ticket → attach user
     WS-->>C: connected
     C->>WS: send message

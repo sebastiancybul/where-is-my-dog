@@ -16,11 +16,11 @@ CHANNEL_LAYERS_OVERRIDE = {
 
 
 def ws_chats_url(conversation_id, ticket="test_ticket"):
-    return f"/ws/chats/{conversation_id}/?ticket={ticket}"
+    return f"/ws/v1/chats/{conversation_id}/?ticket={ticket}"
 
 
 def ws_notifications_url(ticket="test_ticket"):
-    return f"/ws/notifications/?ticket={ticket}"
+    return f"/ws/v1/notifications/?ticket={ticket}"
 
 
 @override_settings(CHANNEL_LAYERS=CHANNEL_LAYERS_OVERRIDE)

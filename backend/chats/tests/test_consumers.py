@@ -16,7 +16,7 @@ CHANNEL_LAYERS_OVERRIDE = {
 
 
 def ws_url(conversation_id, ticket="test_ticket"):
-    return f"/ws/chats/{conversation_id}/?ticket={ticket}"
+    return f"/ws/v1/chats/{conversation_id}/?ticket={ticket}"
 
 
 @override_settings(CHANNEL_LAYERS=CHANNEL_LAYERS_OVERRIDE)
@@ -278,7 +278,7 @@ class ReadReceiptNotificationTests(TransactionTestCase):
                 "chats.middleware.consume_ticket", side_effect=fake_consume
             ):
                 notif = WebsocketCommunicator(
-                    application, "/ws/notifications/?ticket=t1"
+                    application, "/ws/v1/notifications/?ticket=t1"
                 )
                 connected, _ = await notif.connect()
                 self.assertTrue(connected)

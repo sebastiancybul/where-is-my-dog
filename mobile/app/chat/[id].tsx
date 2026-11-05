@@ -65,7 +65,7 @@ const ConversationScreen = () => {
     try {
       const res = await api.post(`/chats/ws-ticket/`);
       const ticket = res.data.ticket;
-      const ws = new WebSocket(`${WS_URL}/ws/chats/${id}/?ticket=${ticket}`);
+      const ws = new WebSocket(`${WS_URL}/ws/v1/chats/${id}/?ticket=${ticket}`);
       wsRef.current = ws;
 
       ws.onopen = () => setWsConnected(true)
