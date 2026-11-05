@@ -22,6 +22,7 @@ from chats.models import (
     Message,
     MessagePhoto,
 )
+from chats.pagination import MessagePagination
 from chats.permissions import IsConversationMember, IsListingOwner
 from chats.serializers import ConversationSerializer, MessageSerializer
 from chats.schemas import (
@@ -195,7 +196,9 @@ class ConversationViewSet(viewsets.GenericViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @messages_schema
-    @action(detail=True, methods=["get"])
+    @action(
+        detail=True, methods=["get"], pagination_class=MessagePagination
+    )
     def messages(self, request, pk=None):
         conversation = get_object_or_404(self.get_queryset(), pk=pk)
         self.check_object_permissions(request, conversation)
@@ -203,11 +206,9 @@ class ConversationViewSet(viewsets.GenericViewSet):
             "photos", "read_statuses"
         )
         page = self.paginate_queryset(qs)
-        if page is not None:
-            return self.get_paginated_response(
-                MessageSerializer(page, many=True).data
-            )
-        return Response(MessageSerializer(qs, many=True).data)
+        return self.get_paginated_response(
+            MessageSerializer(page, many=True).data
+        )
 
     @upload_image_schema
     @action(detail=True, methods=["post"], url_path="upload_image")
