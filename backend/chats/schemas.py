@@ -86,10 +86,13 @@ archive_schema = extend_schema(
 messages_schema = extend_schema(
     tags=["Chats"],
     summary="Get message history",
-    description="Returns paginated messages for a conversation, newest first.",
+    description="Returns messages for a conversation, newest first, 30 per page. Request older messages with ?page=2, 3, ... until `next` is null.",
     responses={
         200: MessageSerializer(many=True),
-        403: OpenApiResponse(description="Not a member of this conversation"),
+        404: OpenApiResponse(
+            description="Conversation not found or not a member, so other "
+            "users' conversations aren't revealed"
+        ),
     },
 )
 

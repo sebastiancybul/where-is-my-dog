@@ -27,6 +27,9 @@ const ConversationScreen = () => {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [input, setInput] = useState('');
   const [zoomUri, setZoomUri] = useState<string | null>(null);
@@ -40,10 +43,32 @@ const ConversationScreen = () => {
   const fetchMessages = async () => {
     try {
       const res = await api.get(`/chats/conversations/${id}/messages/`);
-      const data = res.data.results ?? res.data;
-      setMessages(data);
+      setMessages(res.data.results);
+      setPage(1);
+      setHasMore(!!res.data.next);
     } finally {
       setLoading(false);
+    }
+  }
+
+  const loadOlder = async () => {
+    if (!hasMore || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const res = await api.get(`/chats/conversations/${id}/messages/`, {
+        params: { page: page + 1 },
+      });
+      const older: Message[] = res.data.results;
+      setMessages((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        return [...prev, ...older.filter((m) => !seen.has(m.id))];
+      });
+      setPage(page + 1);
+      setHasMore(!!res.data.next);
+    } catch (e) {
+      console.log('Load older messages error', e);
+    } finally {
+      setLoadingOlder(false);
     }
   }
 
@@ -248,6 +273,11 @@ const ConversationScreen = () => {
         extraData={messages}
         inverted
         contentContainerStyle={{ padding: 12 }}
+        onEndReached={loadOlder}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          loadingOlder ? <ActivityIndicator className="py-3" color="#1e293b" /> : null
+        }
         renderItem={({ item }) => (
           <MessageBubble
             message={item}
