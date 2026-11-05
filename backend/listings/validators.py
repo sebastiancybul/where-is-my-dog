@@ -15,11 +15,17 @@ def validate_image(file):
     try:
         with Image.open(file) as image:
             image_format = image.format
+            too_many_pixels = (
+                image.width * image.height > Image.MAX_IMAGE_PIXELS
+            )
             image.verify()
     except (OSError, SyntaxError, ValueError, Image.DecompressionBombError):
         raise ValidationError("Upload a valid image.")
     finally:
         file.seek(0)
+
+    if too_many_pixels:
+        raise ValidationError("Image dimensions are too large.")
 
     if image_format not in ALLOWED_IMAGE_FORMATS:
         raise ValidationError(

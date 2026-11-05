@@ -99,6 +99,21 @@ class ValidateImageTests(TestCase):
 
         self.assertEqual(file.tell(), 0)
 
+    def test_pixel_count_in_pillow_warning_range_rejected(self):
+        file = uploaded(image_bytes("PNG", size=(100, 100)))
+
+        with patch("PIL.Image.MAX_IMAGE_PIXELS", 6000):
+            with self.assertWarns(Image.DecompressionBombWarning):
+                self.assert_rejected(
+                    file, "Image dimensions are too large."
+                )
+
+    def test_pixel_count_at_limit_accepted(self):
+        file = uploaded(image_bytes("PNG", size=(100, 100)))
+
+        with patch("PIL.Image.MAX_IMAGE_PIXELS", 10000):
+            validate_image(file)
+
     def test_decompression_bomb_rejected(self):
         file = uploaded(image_bytes("PNG", size=(100, 100)))
 
