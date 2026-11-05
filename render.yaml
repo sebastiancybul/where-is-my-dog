@@ -14,7 +14,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     dockerCommand: ./start.sh
-    healthCheckPath: /api/schema/
+    healthCheckPath: /api/health/
     envVars:
       - key: DEBUG
         value: "False"

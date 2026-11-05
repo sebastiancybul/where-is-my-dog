@@ -50,8 +50,20 @@ The API is deployed on Render (free tier):
 
 - **Base URL:** https://wimd-backend.onrender.com (REST under `/api/v1/`, WebSockets under `/ws/v1/`)
 - **Interactive API docs (Swagger):** https://wimd-backend.onrender.com/api/docs/
+- **Health check:** https://wimd-backend.onrender.com/api/health/ (liveness only, used by Render)
 
 > ⚠️ Free tier sleeps when idle — the **first request can take ~30–60s** to cold-start. Just retry once and it responds normally.
+
+<details open>
+<summary><strong>API overview (Swagger screenshots)</strong></summary>
+
+![Health, authentication and chat endpoints](docs/api_ss1.png)
+
+![Listing endpoints](docs/api_ss2.png)
+
+![Notification and settings endpoints](docs/api_ss3.png)
+
+</details>
 
 ---
 
