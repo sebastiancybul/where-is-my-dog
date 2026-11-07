@@ -30,30 +30,26 @@ const CreateFinalStep = ({listingData, photos, location, resetForm, confirmedRew
 
       const listingPayload = {
         ...listingData,
-        reward_offered: !!confirmedReward ? confirmedReward : ''
-      }
-
-      const locationPayload = {
-        point: {
-          type: 'Point',
-          coordinates: [
-            location.coords!.longitude,
-            location.coords!.latitude
-          ]
-        },
-        address: location.address,
-        location_type: 'approximate',
-        is_primary: true,
-        notes: '',
-        accuracy_meters: location.radius
+        reward_offered: !!confirmedReward ? confirmedReward : '',
+        location: {
+          point: {
+            type: 'Point',
+            coordinates: [
+              location.coords!.longitude,
+              location.coords!.latitude
+            ]
+          },
+          address: location.address,
+          location_type: 'approximate',
+          notes: '',
+          accuracy_meters: location.radius
+        }
       }
 
       const resultListing = await api.post(`/listings/`, listingPayload)
 
       const listingId = resultListing.data.id;
       setNewListingId(listingId);
-
-      await api.post(`/listings/${listingId}/location/`, locationPayload)
 
       for (let i=0; i<photos.length; i++) {
         const uri = photos[i].uri;

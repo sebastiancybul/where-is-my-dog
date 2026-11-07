@@ -18,6 +18,7 @@ from rest_framework import status
 from django.contrib.gis.geos import Point
 from PIL import Image
 
+from chats.models import Conversation
 from listings.models import Listing, Location, Photo
 from notifications.models import Notification
 
@@ -346,6 +347,24 @@ class PrivateListingsApiTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         found_listing.refresh_from_db()
         self.assertEqual(found_listing.status, Listing.STATUS_RETURNED)
+
+    def test_mark_found_closes_public_conversation(self):
+        lost_listing = create_listing(
+            self.user, type=Listing.TYPE_LOST, title="Lost Dog"
+        )
+        conversation = Conversation.objects.get(
+            listing=lost_listing, type=Conversation.TYPE_PUBLIC
+        )
+        self.assertFalse(conversation.is_closed)
+
+        res = self.client.post(mark_found_url(lost_listing.id))
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        lost_listing.refresh_from_db()
+        conversation.refresh_from_db()
+        self.assertEqual(lost_listing.status, Listing.STATUS_FOUND)
+        self.assertTrue(conversation.is_closed)
+        self.assertTrue(res.data["public_conversation_is_closed"])
 
     def test_mark_found_other_user_listing_fails(self):
         """Test marking another user's listing fails"""

@@ -1,6 +1,7 @@
+from django.db import transaction
 from rest_framework import serializers
 
-from ..models import Listing
+from ..models import Listing, Location
 from . import PhotoSerializer, LocationSerializer
 from users.serializers import UserPublicSerializer
 
@@ -66,6 +67,12 @@ class ListingSerializer(serializers.ModelSerializer):
 
     photos = PhotoSerializer(many=True, read_only=True)
     locations = LocationSerializer(many=True, read_only=True)
+    location = LocationSerializer(
+        write_only=True,
+        required=False,
+        help_text="First sighting, create only. Saved as the primary "
+        "location. To add more, use the listing's location endpoint.",
+    )
     user = UserPublicSerializer(read_only=True)
 
     primary_location = serializers.SerializerMethodField()
@@ -97,6 +104,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "photos",
             "photo_count",
             "locations",
+            "location",
             "primary_location",
             "public_conversation_id",
             "public_conversation_is_closed",
@@ -138,6 +146,27 @@ class ListingSerializer(serializers.ModelSerializer):
                 "Search radius must be between 1 and 10 km for Lublin area"
             )
         return value
+
+    def validate_location(self, value):
+        if self.instance is not None:
+            raise serializers.ValidationError(
+                "Locations can't be changed here. "
+                "Use the listing's location endpoint instead."
+            )
+        return value
+
+    def create(self, validated_data):
+        location_data = validated_data.pop("location", None)
+        with transaction.atomic():
+            listing = super().create(validated_data)
+            if location_data:
+                location_data["is_primary"] = True
+                Location.objects.create(
+                    listing=listing,
+                    added_by_user=listing.user,
+                    **location_data,
+                )
+        return listing
 
     def get_public_conversation(self, obj):
         if hasattr(obj, "public_conversations"):

@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -28,6 +29,7 @@ from ..serializers import (
 )
 from ..schemas import (
     listing_viewset_schema,
+    listing_create_schema,
     mark_found_schema,
     bump_schema,
     nearby_schema,
@@ -76,6 +78,7 @@ def detail_prefetches():
 
 
 @listing_viewset_schema
+@listing_create_schema
 class ListingViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing dog listings (lost and found).
@@ -127,7 +130,8 @@ class ListingViewSet(viewsets.ModelViewSet):
         else:  # found
             listing.status = Listing.STATUS_RETURNED
 
-        listing.save()
+        with transaction.atomic():
+            listing.save(update_fields=["status", "updated_at"])
 
         serializer = self.get_serializer(listing)
         return Response(serializer.data)

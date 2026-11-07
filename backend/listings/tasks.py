@@ -2,8 +2,10 @@ from datetime import timedelta
 
 from celery import shared_task
 
+from django.db import transaction
 from django.utils import timezone
 
+from chats.models import Conversation
 from notifications.dispatch import dispatch_notification
 from notifications.models import Notification
 
@@ -14,7 +16,8 @@ from .models import Listing
 def check_and_expire_listings():
     """
     Periodic task runs every two hours to check and expire listings.
-    Marks listings as expired if expires_at has passed.
+    Marks listings as expired if expires_at has passed and closes their
+    conversations.
     """
     now = timezone.now()
 
@@ -22,9 +25,18 @@ def check_and_expire_listings():
         expires_at__lt=now, status=Listing.STATUS_ACTIVE
     )
 
-    count = expired_listings.update(status=Listing.STATUS_EXPIRED)
+    with transaction.atomic():
+        ids = list(
+            expired_listings.select_for_update().values_list("id", flat=True)
+        )
+        Listing.objects.filter(id__in=ids).update(
+            status=Listing.STATUS_EXPIRED
+        )
+        Conversation.objects.filter(listing_id__in=ids).update(
+            is_closed=True
+        )
 
-    return f"Expired {count} listings"
+    return f"Expired {len(ids)} listings"
 
 
 @shared_task

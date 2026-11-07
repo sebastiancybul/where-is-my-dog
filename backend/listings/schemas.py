@@ -1,5 +1,6 @@
 from drf_spectacular.utils import (
     extend_schema,
+    extend_schema_view,
     OpenApiParameter,
     OpenApiResponse,
     OpenApiExample,
@@ -15,6 +16,20 @@ from .serializers import (
 )
 
 listing_viewset_schema = extend_schema(tags=["Listings"])
+
+listing_create_schema = extend_schema_view(
+    create=extend_schema(
+        summary="Create listing",
+        description=(
+            "Creates a listing for the logged-in user. Send the first "
+            "sighting in `location` to create the listing, its primary "
+            "location and its public group chat in one transaction: if any "
+            "part fails, nothing is saved. `is_primary` is always set to "
+            "true for this location. Upload photos afterwards with "
+            "`upload_photo`."
+        ),
+    ),
+)
 
 mark_found_schema = extend_schema(
     summary="Mark listing as found/returned",
